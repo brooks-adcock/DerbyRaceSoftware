@@ -1,0 +1,13 @@
+services:
+  ui_web:
+    build:
+      context: ./ui_web
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./ui_web/code:/app
+      - /app/node_modules
+    environment:
+      - WATCHPACK_POLLING=true
+
