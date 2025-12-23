@@ -1,3 +1,5 @@
+name: template
+
 services:
   ui_web:
     build:

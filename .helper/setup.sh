@@ -28,6 +28,29 @@ for pkg in "${PACKAGES[@]}"; do
 done
 
 echo ""
+echo "=== Project Configuration ==="
+
+COMPOSE_FILE="$(dirname "$0")/../docker-compose.dev.yml"
+CURRENT_NAME=$(grep -m1 "^name:" "$COMPOSE_FILE" | awk '{print $2}')
+
+if [ "$CURRENT_NAME" = "template" ]; then
+    echo "Project name is still 'template'. Let's set a proper name."
+    read -p "Enter project name: " PROJECT_NAME
+    
+    # Make docker-legal: lowercase, replace spaces/special chars with hyphens, remove invalid chars
+    PROJECT_NAME=$(echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | sed 's/[^a-z0-9_-]//g')
+    
+    if [ -z "$PROJECT_NAME" ]; then
+        echo "❌ Invalid project name. Keeping 'template'."
+    else
+        sed -i '' "s/^name: template$/name: $PROJECT_NAME/" "$COMPOSE_FILE"
+        echo "✅ Project name set to: $PROJECT_NAME"
+    fi
+else
+    echo "✅ Project name: $CURRENT_NAME"
+fi
+
+echo ""
 echo "=== Setup Complete ==="
 echo "Run 'colima start' to start the container runtime."
 

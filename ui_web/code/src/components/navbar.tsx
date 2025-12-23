@@ -5,98 +5,62 @@ import {
   DisclosureButton,
   DisclosurePanel,
 } from '@headlessui/react'
-import { Bars2Icon } from '@heroicons/react/24/solid'
-import { motion } from 'framer-motion'
+import { Bars2Icon, XMarkIcon } from '@heroicons/react/24/solid'
 import { Link } from './link'
-import { Logo } from './logo'
-import { PlusGrid, PlusGridItem, PlusGridRow } from './plus-grid'
 
 const links = [
-  { href: '/pricing', label: 'Pricing' },
-  { href: '/company', label: 'Company' },
-  { href: '/blog', label: 'Blog' },
-  { href: '/login', label: 'Login' },
+  { href: '/foo1', label: 'Foo 1' },
+  { href: '/foo2', label: 'Foo 2' },
 ]
 
-function DesktopNav() {
+export function Navbar() {
   return (
-    <nav className="relative hidden lg:flex">
-      {links.map(({ href, label }) => (
-        <PlusGridItem key={href} className="relative flex">
-          <Link
-            href={href}
-            className="flex items-center px-4 py-3 text-base font-medium text-gray-950 bg-blend-multiply data-hover:bg-black/[2.5%]"
-          >
-            {label}
-          </Link>
-        </PlusGridItem>
-      ))}
-    </nav>
-  )
-}
-
-function MobileNavButton() {
-  return (
-    <DisclosureButton
-      className="flex size-12 items-center justify-center self-center rounded-lg data-hover:bg-black/5 lg:hidden"
-      aria-label="Open main menu"
-    >
-      <Bars2Icon className="size-6" />
-    </DisclosureButton>
-  )
-}
-
-function MobileNav() {
-  return (
-    <DisclosurePanel className="lg:hidden">
-      <div className="flex flex-col gap-6 py-4">
-        {links.map(({ href, label }, linkIndex) => (
-          <motion.div
-            initial={{ opacity: 0, rotateX: -90 }}
-            animate={{ opacity: 1, rotateX: 0 }}
-            transition={{
-              duration: 0.15,
-              ease: 'easeInOut',
-              rotateX: { duration: 0.3, delay: linkIndex * 0.1 },
-            }}
-            key={href}
-          >
-            <Link href={href} className="text-base font-medium text-gray-950">
-              {label}
-            </Link>
-          </motion.div>
-        ))}
-      </div>
-      <div className="absolute left-1/2 w-screen -translate-x-1/2">
-        <div className="absolute inset-x-0 top-0 border-t border-black/5" />
-        <div className="absolute inset-x-0 top-2 border-t border-black/5" />
-      </div>
-    </DisclosurePanel>
-  )
-}
-
-export function Navbar({ banner }: { banner?: React.ReactNode }) {
-  return (
-    <Disclosure as="header" className="pt-12 sm:pt-16">
-      <PlusGrid>
-        <PlusGridRow className="relative flex justify-between">
-          <div className="relative flex gap-6">
-            <PlusGridItem className="py-3">
-              <Link href="/" title="Home">
-                <Logo className="h-9" />
+    <Disclosure as="header" className="border-b border-gray-200 bg-white">
+      {({ open }) => (
+        <>
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="flex h-16 items-center justify-between">
+              <Link href="/" className="text-xl font-semibold text-gray-900">
+                My App
               </Link>
-            </PlusGridItem>
-            {banner && (
-              <div className="relative hidden items-center py-3 lg:flex">
-                {banner}
-              </div>
-            )}
+              
+              <nav className="hidden space-x-8 md:flex">
+                {links.map(({ href, label }) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    className="text-sm font-medium text-gray-600 hover:text-gray-900"
+                  >
+                    {label}
+                  </Link>
+                ))}
+              </nav>
+
+              <DisclosureButton className="md:hidden rounded-md p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900">
+                {open ? (
+                  <XMarkIcon className="size-6" />
+                ) : (
+                  <Bars2Icon className="size-6" />
+                )}
+              </DisclosureButton>
+            </div>
           </div>
-          <DesktopNav />
-          <MobileNavButton />
-        </PlusGridRow>
-      </PlusGrid>
-      <MobileNav />
+
+          <DisclosurePanel className="md:hidden border-t border-gray-200 bg-white">
+            <div className="space-y-1 px-4 py-3">
+              {links.map(({ href, label }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className="block py-2 text-base font-medium text-gray-600 hover:text-gray-900"
+                >
+                  {label}
+                </Link>
+              ))}
+            </div>
+          </DisclosurePanel>
+        </>
+      )}
     </Disclosure>
   )
 }

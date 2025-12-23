@@ -5,5 +5,9 @@ if ! colima status &> /dev/null; then
     colima start
 fi
 
-docker compose -f docker-compose.dev.yml build
+# Remove this project's containers and locally-built images
+docker compose -f docker-compose.dev.yml down --rmi local
+
+# Fresh build with no cache
+docker compose -f docker-compose.dev.yml build --no-cache
 
