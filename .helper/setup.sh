@@ -51,6 +51,27 @@ else
 fi
 
 echo ""
+echo "=== Environment Variables ==="
+
+ENV_FILE="$(dirname "$0")/../.env"
+
+# Create .env if it doesn't exist
+if [ ! -f "$ENV_FILE" ]; then
+    touch "$ENV_FILE"
+    echo "✅ Created .env file"
+else
+    echo "✅ .env file exists"
+fi
+
+# Check for GEMINI_API_KEY
+if ! grep -q "GEMINI_API_KEY" "$ENV_FILE"; then
+    echo "# GEMINI_API_KEY=add your key here" >> "$ENV_FILE"
+    echo "⚠️  Added placeholder for GEMINI_API_KEY (uncomment and add your key)"
+else
+    echo "✅ GEMINI_API_KEY entry exists"
+fi
+
+echo ""
 echo "=== Setup Complete ==="
 echo "Run 'colima start' to start the container runtime."
 

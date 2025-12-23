@@ -25,6 +25,7 @@ venv/
 
 # Docker
 *.log
+logs/
 
 # Node
 node_modules/
