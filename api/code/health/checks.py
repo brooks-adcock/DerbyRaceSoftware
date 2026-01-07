@@ -16,10 +16,25 @@ def checkGeminiKey() -> Dict[str, Any]:
     }
 
 
+def checkEnvironment() -> Dict[str, Any]:
+    """Check for all required environment variables."""
+    required_vars = ["GEMINI_API_KEY"]
+    missing_vars = [var for var in required_vars if not os.environ.get(var)]
+    is_ok = len(missing_vars) == 0
+    
+    return {
+        "id": "env_vars",
+        "label": "Environment Variables",
+        "is_ok": is_ok,
+        "message": "All required variables set" if is_ok else f"Missing: {', '.join(missing_vars)}",
+        "help_url": "/.helper/gemini_setup.md"
+    }
+
+
 def runAllChecks() -> Dict[str, Any]:
     """Run all health checks and return aggregated status."""
     checks: List[Dict[str, Any]] = [
-        checkGeminiKey(),
+        checkEnvironment(),
     ]
     
     is_healthy = all(check["is_ok"] for check in checks)

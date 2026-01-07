@@ -19,7 +19,7 @@ interface HealthStatus {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8888'
 
-export function SetupChecklist() {
+export function SetupChecklist({ force_show = false }: { force_show?: boolean } = {}) {
   const [status, setStatus] = useState<HealthStatus | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [is_loading, setIsLoading] = useState(true)
@@ -27,7 +27,7 @@ export function SetupChecklist() {
   useEffect(() => {
     async function fetchHealth() {
       try {
-        const response = await fetch(`${API_URL}/api/health`)
+        const response = await fetch(`${API_URL}/v1/health`)
         if (!response.ok) {
           throw new Error('Failed to fetch health status')
         }
@@ -48,8 +48,8 @@ export function SetupChecklist() {
     return () => clearInterval(interval)
   }, [])
 
-  // Don't show anything if healthy
-  if (status?.is_healthy) {
+  // Don't show anything if healthy (unless forced)
+  if (status?.is_healthy && !force_show) {
     return null
   }
 

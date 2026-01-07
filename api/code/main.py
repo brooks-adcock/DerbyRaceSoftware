@@ -11,6 +11,7 @@ def makeApp():
     return tornado.web.Application([
         (r"/ws/chat", ChatWebSocketHandler),
         (r"/api/health", HealthHandler),
+        (r"/v1/health", HealthHandler),
     ], debug=True)
 
 

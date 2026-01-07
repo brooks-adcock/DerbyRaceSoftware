@@ -1,4 +1,3 @@
 #!/bin/sh
-npm install
+# Dependencies are now installed during build
 npm run dev
-

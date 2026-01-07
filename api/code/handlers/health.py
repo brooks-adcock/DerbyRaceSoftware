@@ -20,5 +20,6 @@ class HealthHandler(tornado.web.RequestHandler):
     def get(self):
         result = runAllChecks()
         self.set_header("Content-Type", "application/json")
+        self.set_status(200)
         self.write(json.dumps(result))
 

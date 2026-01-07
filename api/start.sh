@@ -1,4 +1,3 @@
 #!/bin/sh
-pip install -r /app/requirements.txt
+# Dependencies are now installed during build
 python /app/code/main.py
-

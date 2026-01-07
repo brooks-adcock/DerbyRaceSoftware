@@ -1,7 +1,12 @@
 FROM node:20-alpine
 
-# Code is volume-mounted in docker-compose, no COPY needed
 WORKDIR /app
+
+# Copy package files first to leverage Docker cache
+COPY code/package*.json ./
+
+# Install dependencies during build
+RUN npm install
 
 COPY start.sh /scripts/start.sh
 RUN chmod +x /scripts/start.sh
@@ -9,4 +14,3 @@ RUN chmod +x /scripts/start.sh
 EXPOSE 3000
 
 CMD ["/scripts/start.sh"]
-

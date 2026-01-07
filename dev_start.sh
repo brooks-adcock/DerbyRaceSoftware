@@ -22,7 +22,7 @@ docker compose -f docker-compose.dev.yml up -d
 
 echo "✅ Services started in background"
 echo "📄 Logs: $LOG_FILE"
-echo "   tail -f $LOG_FILE"
+echo "   ./dev_tail.sh"
 
 # Follow logs to file (appends)
 docker compose -f docker-compose.dev.yml logs -f >> "$LOG_FILE" 2>&1 &

@@ -10,7 +10,7 @@ import { Link } from './link'
 
 const links = [
   { href: '/foo1', label: 'Foo 1' },
-  { href: '/foo2', label: 'Foo 2' },
+  { href: '/health', label: 'Health' },
 ]
 
 export function Navbar() {

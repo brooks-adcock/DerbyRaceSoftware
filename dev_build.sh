@@ -15,9 +15,26 @@ echo "==========================================================================
 echo "=== BUILD STARTED: $(date)" >> "$LOG_FILE"
 echo "================================================================================" >> "$LOG_FILE"
 
-# Remove this project's containers and locally-built images
-docker compose -f docker-compose.dev.yml down --rmi local
+# Get specific service if provided
+SERVICE=$1
 
-# Fresh build with no cache
-docker compose -f docker-compose.dev.yml build --no-cache
+if [ -n "$SERVICE" ]; then
+    echo "🏗️ Rebuilding specific service: $SERVICE"
+    echo "=== BUILD SERVICE ($SERVICE): $(date)" >> "$LOG_FILE"
+    
+    # Stop and remove the service and its anonymous volumes (like node_modules)
+    docker compose -f docker-compose.dev.yml rm -fs "$SERVICE" -v
+    
+    # Fresh build with no cache
+    docker compose -f docker-compose.dev.yml build "$SERVICE" --no-cache
+else
+    echo "🏗️ Rebuilding all services"
+    echo "=== BUILD ALL: $(date)" >> "$LOG_FILE"
+    
+    # Remove project's containers, locally-built images, and ALL anonymous volumes
+    docker compose -f docker-compose.dev.yml down --rmi local -v
+    
+    # Fresh build with no cache
+    docker compose -f docker-compose.dev.yml build --no-cache
+fi
 
