@@ -8,7 +8,10 @@
             "MaintenanceDB": "postgres",
             "Username": "postgres",
             "SSLMode": "prefer",
-            "PassFile": "/var/lib/pgadmin/pgpass"
+            "Shared": true,
+            "User": "admin@admin.com",
+            "SavePassword": true,
+            "PassFile": "/var/lib/pgadmin/.pgpass"
         }
     }
 }
