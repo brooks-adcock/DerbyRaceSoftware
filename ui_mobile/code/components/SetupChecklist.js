@@ -34,11 +34,6 @@ export function SetupChecklist({ force_show = false }) {
     return () => clearInterval(interval);
   }, []);
 
-  // Don't show anything if healthy (unless forced)
-  if (status?.is_healthy && !force_show) {
-    return null;
-  }
-
   // Loading state
   if (is_loading) {
     return (
@@ -48,6 +43,28 @@ export function SetupChecklist({ force_show = false }) {
       </View>
     );
   }
+
+  // Don't show anything if healthy (unless forced)
+  if (status?.is_healthy && !force_show) {
+    return null;
+  }
+
+  // Success state if healthy
+  if (status?.is_healthy) {
+    return (
+      <View style={[styles.container, styles.containerSuccess]}>
+        <View style={styles.header}>
+          <Ionicons name="checkmark-circle" size={20} color="#059669" />
+          <Text style={[styles.title, styles.titleSuccess]}>All systems go!</Text>
+        </View>
+        <Text style={[styles.subtitle, styles.subtitleSuccess]}>
+          API and all services are running correctly.
+        </Text>
+      </View>
+    );
+  }
+
+  const showGeminiPrompt = status?.checks.some(c => !c.is_ok && (c.id === 'gemini_key' || c.message.includes('GEMINI')));
 
   return (
     <View style={styles.container}>
@@ -85,9 +102,11 @@ export function SetupChecklist({ force_show = false }) {
         )}
       </View>
       
-      <Text style={styles.footerText}>
-        See .helper/gemini_setup.md for instructions.
-      </Text>
+      {showGeminiPrompt && (
+        <Text style={styles.footerText}>
+          See .helper/gemini_setup.md for instructions.
+        </Text>
+      )}
     </View>
   );
 }
@@ -105,6 +124,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 2,
+  },
+  containerSuccess: {
+    backgroundColor: '#ecfdf5',
+    borderColor: '#a7f3d0',
   },
   loadingContainer: {
     margin: 16,
@@ -133,10 +156,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#92400e',
   },
+  titleSuccess: {
+    color: '#065f46',
+  },
   subtitle: {
     fontSize: 14,
     color: '#b45309',
     marginBottom: 12,
+  },
+  subtitleSuccess: {
+    color: '#047857',
+    marginBottom: 0,
   },
   list: {
     gap: 8,

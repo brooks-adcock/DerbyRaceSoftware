@@ -2,6 +2,7 @@ name: template
 
 services:
   ui_web:
+  # profiles: ["disabled"] # Uncomment to turn off
     build:
       context: ./ui_web
       dockerfile: Dockerfile.dev
@@ -16,6 +17,7 @@ services:
       - api
 
   ui_mobile:
+    # profiles: ["disabled"] # Uncomment to turn off
     build:
       context: ./ui_mobile
       dockerfile: Dockerfile.dev
@@ -31,6 +33,7 @@ services:
       - api
 
   api:
+    # profiles: ["disabled"] # Uncomment to turn off
     build:
       context: ./api
       dockerfile: Dockerfile.dev
@@ -40,4 +43,33 @@ services:
       - ./api/code:/app/code
     environment:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - DATABASE_URL=${DATABASE_URL}
+    depends_on:
+      - db
 
+  db:
+    # profiles: ["disabled"] # Uncomment to turn off
+    build:
+      context: ./db_postgres
+      dockerfile: Dockerfile.dev
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./db_postgres/data:/var/lib/postgresql/data
+
+  db_mgr:
+    # profiles: ["disabled"] # Uncomment to turn off
+    build:
+      context: ./db_postgres_mgr
+      dockerfile: Dockerfile.dev
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}
+    ports:
+      - "5050:5050"
+    depends_on:
+      - db

@@ -7,7 +7,7 @@ LOG_FILE="$LOG_DIR/docker.log"
 mkdir -p "$LOG_DIR"
 
 if ! colima status &> /dev/null; then
-    echo "❌ Colima is not running. Starting colima..."
+    echo "⚠️ Colima is not running. Starting colima..."
     colima start
 fi
 

@@ -48,11 +48,6 @@ export function SetupChecklist({ force_show = false }: { force_show?: boolean } 
     return () => clearInterval(interval)
   }, [])
 
-  // Don't show anything if healthy (unless forced)
-  if (status?.is_healthy && !force_show) {
-    return null
-  }
-
   // Loading state
   if (is_loading) {
     return (
@@ -60,6 +55,30 @@ export function SetupChecklist({ force_show = false }: { force_show?: boolean } 
         <div className="animate-pulse flex items-center gap-3">
           <div className="h-5 w-5 rounded-full bg-gray-300" />
           <div className="h-4 w-48 rounded bg-gray-300" />
+        </div>
+      </div>
+    )
+  }
+
+  // Don't show anything if healthy (unless forced)
+  if (status?.is_healthy && !force_show) {
+    return null
+  }
+
+  // Success state if healthy
+  if (status?.is_healthy) {
+    return (
+      <div className="rounded-xl border border-green-200 bg-green-50 p-4 shadow-sm">
+        <div className="flex items-center gap-3">
+          <CheckCircleIcon className="h-5 w-5 text-green-500 shrink-0" />
+          <div>
+            <h3 className="text-sm font-semibold text-green-800">
+              All systems go!
+            </h3>
+            <p className="text-sm text-green-700 mt-1">
+              API and all services are running correctly.
+            </p>
+          </div>
         </div>
       </div>
     )
@@ -109,9 +128,11 @@ export function SetupChecklist({ force_show = false }: { force_show?: boolean } 
             )}
           </ul>
           
-          <p className="text-xs text-amber-600 mt-3">
-            See <code className="bg-amber-100 px-1 rounded">.helper/gemini_setup.md</code> for setup instructions.
-          </p>
+          {status?.checks.some(c => !c.is_ok && (c.id === 'gemini_key' || c.message.includes('GEMINI'))) && (
+            <p className="text-xs text-amber-600 mt-3">
+              See <code className="bg-amber-100 px-1 rounded">.helper/gemini_setup.md</code> for setup instructions.
+            </p>
+          )}
         </div>
       </div>
     </div>

@@ -1,0 +1,6 @@
+FROM cmdpromptinc/pgmanage-enterprise:latest
+
+EXPOSE 5050
+
+# The image usually has its own entrypoint, but we can be explicit if needed.
+# Based on docs, it runs a python-based server.

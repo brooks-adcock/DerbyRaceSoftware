@@ -1,10 +1,11 @@
 #!/bin/bash
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+START_TIME=$(date +%s)
 LOG_FILE="$SCRIPT_DIR/logs/docker.log"
 
 if ! colima status &> /dev/null; then
-    echo "❌ Colima is not running. Starting colima..."
+    echo "⚠️ Colima is not running. Starting colima..."
     colima start
 fi
 
@@ -37,4 +38,9 @@ else
     # Fresh build with no cache
     docker compose -f docker-compose.dev.yml build --no-cache
 fi
+
+END_TIME=$(date +%s)
+DURATION=$((END_TIME - START_TIME))
+echo "✅ Build completed in $((DURATION / 60))m $((DURATION % 60))s"
+echo "=== BUILD FINISHED: $(date) (Duration: $((DURATION / 60))m $((DURATION % 60))s) ===" >> "$LOG_FILE"
 
