@@ -69,7 +69,10 @@ services:
     environment:
       - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL}
       - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}
+      - PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED=False
     ports:
       - "5050:5050"
+    volumes:
+      - ./db_postgres_mgr/servers.json:/pgadmin4/servers.json
     depends_on:
       - db

@@ -1,6 +1,5 @@
-FROM cmdpromptinc/pgmanage-enterprise:latest
+FROM dpage/pgadmin4:latest
+
+ENV PGADMIN_LISTEN_PORT=5050
 
 EXPOSE 5050
-
-# The image usually has its own entrypoint, but we can be explicit if needed.
-# Based on docs, it runs a python-based server.

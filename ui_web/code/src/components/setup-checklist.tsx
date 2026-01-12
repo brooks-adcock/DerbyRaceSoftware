@@ -69,15 +69,26 @@ export function SetupChecklist({ force_show = false }: { force_show?: boolean } 
   if (status?.is_healthy) {
     return (
       <div className="rounded-xl border border-green-200 bg-green-50 p-4 shadow-sm">
-        <div className="flex items-center gap-3">
-          <CheckCircleIcon className="h-5 w-5 text-green-500 shrink-0" />
-          <div>
+        <div className="flex items-start gap-3">
+          <CheckCircleIcon className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
+          <div className="flex-1">
             <h3 className="text-sm font-semibold text-green-800">
               All systems go!
             </h3>
             <p className="text-sm text-green-700 mt-1">
               API and all services are running correctly.
             </p>
+            
+            <ul className="mt-3 space-y-2 border-t border-green-100 pt-3">
+              {status.checks.map((check) => (
+                <li key={check.id} className="flex items-center gap-2">
+                  <CheckCircleIcon className="h-4 w-4 text-green-500 shrink-0" />
+                  <span className="text-sm text-green-700">
+                    {check.label}
+                  </span>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </div>

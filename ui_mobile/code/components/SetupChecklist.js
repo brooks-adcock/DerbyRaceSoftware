@@ -60,6 +60,15 @@ export function SetupChecklist({ force_show = false }) {
         <Text style={[styles.subtitle, styles.subtitleSuccess]}>
           API and all services are running correctly.
         </Text>
+        
+        <View style={[styles.list, styles.listSuccess]}>
+          {status.checks.map((check) => (
+            <View key={check.id} style={styles.item}>
+              <Ionicons name="checkmark-circle" size={16} color="#10b981" />
+              <Text style={styles.itemLabelSuccess}>{check.label}</Text>
+            </View>
+          ))}
+        </View>
       </View>
     );
   }
@@ -171,6 +180,12 @@ const styles = StyleSheet.create({
   list: {
     gap: 8,
   },
+  listSuccess: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#d1fae5',
+  },
   item: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -182,6 +197,10 @@ const styles = StyleSheet.create({
   itemLabel: {
     fontSize: 14,
     color: '#4b5563',
+  },
+  itemLabelSuccess: {
+    fontSize: 14,
+    color: '#065f46',
   },
   itemLabelBold: {
     fontWeight: '500',
