@@ -75,7 +75,5 @@ services:
       - "5050:5050"
     volumes:
       - ./db_postgres_mgr/servers.json:/pgadmin4/servers.json
-      - ./db_postgres_mgr/pgpass:/var/lib/pgadmin/pgpass
-      - ./db_postgres_mgr/pgpass:/var/lib/pgadmin/.pgpass
     depends_on:
       - db
