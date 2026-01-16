@@ -1,0 +1,55 @@
+[
+  {
+    "id": 1,
+    "first_name": "Test",
+    "last_name": "McTesterton",
+    "car_name": "Foo Bar Bing",
+    "is_beauty": false,
+    "win_preference": "speed",
+    "photo_hash": "1335e65c-6c95-42b9-b851-fcba1e277158",
+    "scout_level": "Wolf",
+    "registration_status": "STARTED",
+    "weight_oz": 0,
+    "is_wheels_roll": false,
+    "is_length_pass": false,
+    "track_times": [
+      {
+        "time": 0,
+        "is_included": false
+      }
+    ],
+    "beauty_scores": []
+  },
+  {
+    "id": 2,
+    "first_name": "Foo",
+    "last_name": "Two",
+    "car_name": "Foo Foo",
+    "is_beauty": false,
+    "win_preference": "speed",
+    "photo_hash": "54dcf14f-e71e-44b4-b3f4-4d98751d1ee7",
+    "scout_level": "Family",
+    "registration_status": "STARTED",
+    "weight_oz": 0,
+    "is_wheels_roll": false,
+    "is_length_pass": false,
+    "track_times": [],
+    "beauty_scores": []
+  },
+  {
+    "id": 3,
+    "first_name": "Robert",
+    "last_name": "Adcock",
+    "car_name": "Robert's Car",
+    "is_beauty": false,
+    "win_preference": "speed",
+    "photo_hash": "d311c7b2-6973-412a-8652-f8f96d52e5d1",
+    "scout_level": "Wolf",
+    "registration_status": "STARTED",
+    "weight_oz": 0,
+    "is_wheels_roll": false,
+    "is_length_pass": false,
+    "track_times": [],
+    "beauty_scores": []
+  }
+]

@@ -1,12 +1,11 @@
 import '@/styles/tailwind.css'
 import type { Metadata } from 'next'
-import { ChatProvider } from '@/components/chat/chat-provider'
-import { ChatDrawer } from '@/components/chat/chat-drawer'
+import { NavigationWrapper } from '@/components/navigation-wrapper'
 
 export const metadata: Metadata = {
   title: {
-    template: '%s - My App',
-    default: 'My App',
+    template: '%s - Pinewood Derby',
+    default: 'Pinewood Derby',
   },
 }
 
@@ -24,10 +23,9 @@ export default function RootLayout({
         />
       </head>
       <body className="text-gray-950 antialiased">
-        <ChatProvider>
+        <NavigationWrapper>
           {children}
-          <ChatDrawer />
-        </ChatProvider>
+        </NavigationWrapper>
       </body>
     </html>
   )

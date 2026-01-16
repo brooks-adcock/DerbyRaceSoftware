@@ -5,6 +5,7 @@ import os
 
 from handlers.chat_ws import ChatWebSocketHandler
 from handlers.health import HealthHandler
+from handlers.races import RacesHandler
 
 
 def makeApp():
@@ -12,6 +13,7 @@ def makeApp():
         (r"/ws/chat", ChatWebSocketHandler),
         (r"/api/health", HealthHandler),
         (r"/v1/health", HealthHandler),
+        (r"/api/races", RacesHandler),
     ], debug=True)
 
 

@@ -14,6 +14,7 @@ This guide walks you through setting up Google's Gemini API for the chat feature
 4. Click **"Create API Key"**
 5. Choose an existing Google Cloud project or create a new one
 6. Copy your API key
+7. in your ./.env file, set 
 
 ### Option B: Google Cloud Console
 

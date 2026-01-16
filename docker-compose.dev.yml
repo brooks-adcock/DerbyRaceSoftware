@@ -2,7 +2,7 @@ name: template
 
 services:
   ui_web:
-  # profiles: ["disabled"] # Uncomment to turn off
+    # profiles: ["disabled"] # Uncomment to turn off
     build:
       context: ./ui_web
       dockerfile: Dockerfile.dev
@@ -13,11 +13,9 @@ services:
       - /app/node_modules
     environment:
       - WATCHPACK_POLLING=true
-    depends_on:
-      - api
 
   ui_mobile:
-    # profiles: ["disabled"] # Uncomment to turn off
+    profiles: ["disabled"] # Uncomment to turn off
     build:
       context: ./ui_mobile
       dockerfile: Dockerfile.dev
@@ -29,11 +27,9 @@ services:
       - /app/node_modules
     environment:
       - WATCHPACK_POLLING=true
-    depends_on:
-      - api
 
   api:
-    # profiles: ["disabled"] # Uncomment to turn off
+    profiles: ["disabled"] # Uncomment to turn off
     build:
       context: ./api
       dockerfile: Dockerfile.dev
@@ -48,7 +44,7 @@ services:
       - db
 
   db:
-    # profiles: ["disabled"] # Uncomment to turn off
+    profiles: ["disabled"] # Uncomment to turn off
     build:
       context: ./db_postgres
       dockerfile: Dockerfile.dev
@@ -60,9 +56,10 @@ services:
       - "5432:5432"
     volumes:
       - ./db_postgres/data:/var/lib/postgresql/data
+      - ./db_postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
 
   db_mgr:
-    # profiles: ["disabled"] # Uncomment to turn off
+    profiles: ["disabled"] # Uncomment to turn off
     build:
       context: ./db_postgres_mgr
       dockerfile: Dockerfile.dev

@@ -1,66 +1,39 @@
 'use client'
 
-import {
-  Disclosure,
-  DisclosureButton,
-  DisclosurePanel,
-} from '@headlessui/react'
-import { Bars2Icon, XMarkIcon } from '@heroicons/react/24/solid'
-import { Link } from './link'
+import { useState } from 'react'
+import { ChevronRightIcon } from '@heroicons/react/24/solid'
+import { MenuDrawer } from './menu-drawer'
 
 const links = [
-  { href: '/foo1', label: 'Foo 1' },
-  { href: '/health', label: 'Health' },
+  { href: '/', label: 'My Registrations' },
+  { href: '/register', label: 'Register New Car' },
+  { href: '/admin', label: 'Admin Dashboard' },
+  { href: '/registration', label: 'Registration List' },
+  { href: '/setup', label: 'Race Setup' },
+  { href: '/heats', label: 'Heat Control' },
+  { href: '/judging', label: 'Judging: Beauty' },
+  { href: '/results', label: 'Results' },
+  { href: '/public', label: 'Public Display' },
 ]
 
 export function Navbar() {
+  const [is_drawer_open, set_is_drawer_open] = useState(false)
+
   return (
-    <Disclosure as="header" className="border-b border-gray-200 bg-white">
-      {({ open }) => (
-        <>
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="flex h-16 items-center justify-between">
-              <Link href="/" className="text-xl font-semibold text-gray-900">
-                My App
-              </Link>
-              
-              <nav className="hidden space-x-8 md:flex">
-                {links.map(({ href, label }) => (
-                  <Link
-                    key={href}
-                    href={href}
-                    className="text-sm font-medium text-gray-600 hover:text-gray-900"
-                  >
-                    {label}
-                  </Link>
-                ))}
-              </nav>
+    <>
+      <button
+        onClick={() => set_is_drawer_open(true)}
+        className="fixed left-4 top-4 z-40 rounded-full bg-white p-2 text-gray-600 shadow-md ring-1 ring-gray-200 hover:bg-gray-50 hover:text-gray-900 focus:outline-none"
+        aria-label="Open menu"
+      >
+        <ChevronRightIcon className="size-6" />
+      </button>
 
-              <DisclosureButton className="md:hidden rounded-md p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900">
-                {open ? (
-                  <XMarkIcon className="size-6" />
-                ) : (
-                  <Bars2Icon className="size-6" />
-                )}
-              </DisclosureButton>
-            </div>
-          </div>
-
-          <DisclosurePanel className="md:hidden border-t border-gray-200 bg-white">
-            <div className="space-y-1 px-4 py-3">
-              {links.map(({ href, label }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  className="block py-2 text-base font-medium text-gray-600 hover:text-gray-900"
-                >
-                  {label}
-                </Link>
-              ))}
-            </div>
-          </DisclosurePanel>
-        </>
-      )}
-    </Disclosure>
+      <MenuDrawer
+        is_open={is_drawer_open}
+        onClose={() => set_is_drawer_open(false)}
+        links={links}
+      />
+    </>
   )
 }
