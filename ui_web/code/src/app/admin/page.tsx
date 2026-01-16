@@ -1,8 +1,10 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { Container } from '@/components/container'
 import { Heading, Subheading } from '@/components/text'
 import { Link } from '@/components/link'
+import { RaceState } from '@/lib/storage'
 import { 
   ClipboardDocumentListIcon, 
   Cog6ToothIcon, 
@@ -52,10 +54,56 @@ const admin_links = [
 ]
 
 export default function AdminDashboard() {
+  const [race_state, set_race_state] = useState<RaceState>('REGISTRATION')
+  const [is_loading, set_is_loading] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/race')
+      .then(res => res.json())
+      .then(data => {
+        set_race_state(data.state)
+        set_is_loading(false)
+      })
+  }, [])
+
+  const handleUpdateState = async (new_state: RaceState) => {
+    try {
+      const response = await fetch('/api/race', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update_state', state: new_state }),
+      })
+      const data = await response.json()
+      set_race_state(data.state)
+    } catch (error) {
+      console.error('Failed to update race state:', error)
+    }
+  }
+
   return (
     <Container className="py-24">
-      <Subheading>Management</Subheading>
-      <Heading className="mt-2">Admin Dashboard</Heading>
+      <div className="flex flex-col gap-8 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <Subheading>Management</Subheading>
+          <Heading className="mt-2">Admin Dashboard</Heading>
+        </div>
+        
+        <div className="flex items-center gap-4 rounded-2xl bg-gray-50 p-2 ring-1 ring-gray-200">
+          {(['REGISTRATION', 'RACING', 'COMPLETE'] as RaceState[]).map((state) => (
+            <button
+              key={state}
+              onClick={() => handleUpdateState(state)}
+              className={`rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-widest transition-all ${
+                race_state === state 
+                  ? 'bg-gray-950 text-white shadow-lg' 
+                  : 'text-gray-500 hover:text-gray-950'
+              }`}
+            >
+              {state}
+            </button>
+          ))}
+        </div>
+      </div>
       
       <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
         {admin_links.map((link) => (

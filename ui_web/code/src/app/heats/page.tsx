@@ -4,57 +4,68 @@ import { useState, useEffect } from 'react'
 import { Container } from '@/components/container'
 import { Heading, Subheading } from '@/components/text'
 import { Button } from '@/components/button'
-import { Heat, RaceSettings } from '@/lib/storage'
+import { Heat, RaceSettings, Race } from '@/lib/storage'
 
 export default function HeatsPage() {
-  const [heats, set_heats] = useState<Heat[]>([])
+  const [race, set_race] = useState<Race | null>(null)
   const [settings, set_settings] = useState<RaceSettings | null>(null)
   const [is_loading, set_is_loading] = useState(true)
   const [current_heat_index, set_current_heat_index] = useState(0)
 
-  useEffect(() => {
-    Promise.all([
-      fetch('/api/heats').then(res => res.json()),
+  const fetchData = async () => {
+    const [race_data, settings_data] = await Promise.all([
+      fetch('/api/race').then(res => res.json()),
       fetch('/api/settings').then(res => res.json())
-    ]).then(([heats_data, settings_data]) => {
-      set_heats(heats_data)
-      set_settings(settings_data)
-      set_is_loading(false)
-    })
+    ])
+    set_race(race_data)
+    set_settings(settings_data)
+    set_is_loading(false)
+
+    // Set current heat index to the first one that isn't fully timed
+    if (race_data.heats.length > 0) {
+      const idx = race_data.heats.findIndex((h: Heat) => h.lane_times.some(t => t === null && h.lane_cars.some(car_id => car_id !== null)))
+      if (idx !== -1) set_current_heat_index(idx)
+    }
+  }
+
+  useEffect(() => {
+    fetchData()
   }, [])
 
   const handleGenerateHeats = async () => {
-    const response = await fetch('/api/heats', {
+    const response = await fetch('/api/race', {
       method: 'POST',
-      body: JSON.stringify({ action: 'generate' }),
+      body: JSON.stringify({ action: 'generate_heats' }),
     })
     const data = await response.json()
-    set_heats(data)
+    set_race(data)
   }
 
   const handleNextHeat = () => {
-    if (current_heat_index < heats.length - 1) {
+    if (race && current_heat_index < race.heats.length - 1) {
       set_current_heat_index(current_heat_index + 1)
     }
   }
 
   const submitTime = async (lane_index: number, time: number) => {
-    const heat = heats[current_heat_index]
-    const response = await fetch('/api/heats', {
+    if (!race) return
+    const heat = race.heats[current_heat_index]
+    const response = await fetch('/api/race', {
       method: 'POST',
       body: JSON.stringify({
-        action: 'update_time',
+        action: 'update_heat_time',
         heat_id: heat.id,
         lane_index,
         time
       }),
     })
     const data = await response.json()
-    set_heats(data)
+    set_race(data)
   }
 
-  if (is_loading || !settings) return <Container className="py-24">Loading...</Container>
+  if (is_loading || !settings || !race) return <Container className="py-24">Loading...</Container>
 
+  const heats = race.heats
   const current_heat = heats[current_heat_index]
   const is_current_heat_finished = current_heat && current_heat.lane_times.every((t, i) => current_heat.lane_cars[i] === null || t !== null)
 
@@ -78,49 +89,51 @@ export default function HeatsPage() {
       ) : (
         <div className="mt-12 space-y-12">
           {/* Current Heat Focus */}
-          <section className="rounded-3xl bg-gray-950 p-8 text-white shadow-2xl">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-xs font-bold text-gray-400 uppercase">Currently Running</div>
-                <h2 className="text-3xl font-bold">Heat #{current_heat.id}</h2>
-              </div>
-              <Button 
-                disabled={!is_current_heat_finished || current_heat_index === heats.length - 1}
-                onClick={handleNextHeat}
-              >
-                Next Heat
-              </Button>
-            </div>
-
-            <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {current_heat.lane_cars.map((car_id, i) => (
-                <div key={i} className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
-                  <div className="text-xs font-medium text-gray-400 uppercase">Lane {i + 1}</div>
-                  <div className="mt-2 text-2xl font-bold">
-                    {car_id ? `Car #${car_id}` : 'Empty'}
-                  </div>
-                  <div className="mt-4 font-mono text-4xl text-[#D15052]">
-                    {current_heat.lane_times[i] ? current_heat.lane_times[i]?.toFixed(3) : '--.---'}
-                  </div>
-                  {car_id && !current_heat.lane_times[i] && (
-                    <div className="mt-4 flex gap-2">
-                      <input 
-                        type="number" 
-                        step="0.001" 
-                        placeholder="Time"
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            submitTime(i, parseFloat((e.target as HTMLInputElement).value))
-                          }
-                        }}
-                        className="w-full rounded bg-white/10 px-2 py-1 text-sm text-white focus:outline-none"
-                      />
-                    </div>
-                  )}
+          {current_heat && (
+            <section className="rounded-3xl bg-gray-950 p-8 text-white shadow-2xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-bold text-gray-400 uppercase">Currently Running</div>
+                  <h2 className="text-3xl font-bold">Heat #{current_heat.id}</h2>
                 </div>
-              ))}
-            </div>
-          </section>
+                <Button 
+                  disabled={!is_current_heat_finished || current_heat_index === heats.length - 1}
+                  onClick={handleNextHeat}
+                >
+                  Next Heat
+                </Button>
+              </div>
+
+              <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                {current_heat.lane_cars.map((car_id, i) => (
+                  <div key={i} className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+                    <div className="text-xs font-medium text-gray-400 uppercase">Lane {i + 1}</div>
+                    <div className="mt-2 text-2xl font-bold">
+                      {car_id ? `Car #${car_id}` : 'Empty'}
+                    </div>
+                    <div className="mt-4 font-mono text-4xl text-blue-600">
+                      {current_heat.lane_times[i] ? current_heat.lane_times[i]?.toFixed(3) : '--.---'}
+                    </div>
+                    {car_id && !current_heat.lane_times[i] && (
+                      <div className="mt-4 flex gap-2">
+                        <input 
+                          type="number" 
+                          step="0.001" 
+                          placeholder="Time"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              submitTime(i, parseFloat((e.target as HTMLInputElement).value))
+                            }
+                          }}
+                          className="w-full rounded bg-white/10 px-2 py-1 text-sm text-white focus:outline-none"
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Heats Table */}
           <section>

@@ -10,6 +10,7 @@ import Image from 'next/image'
 export default function Home() {
   const [cars, set_cars] = useState<Car[]>([])
   const [settings, set_settings] = useState<RaceSettings | null>(null)
+  const [race_state, set_race_state] = useState<string>('')
   const [is_loading, set_is_loading] = useState(true)
 
   useEffect(() => {
@@ -17,15 +18,18 @@ export default function Home() {
       const my_car_ids: number[] = JSON.parse(localStorage.getItem('my_cars') || '[]')
       
       try {
-        const [cars_res, settings_res] = await Promise.all([
+        const [cars_res, settings_res, race_res] = await Promise.all([
           fetch('/api/cars'),
-          fetch('/api/settings')
+          fetch('/api/settings'),
+          fetch('/api/race')
         ])
         
         const all_cars: Car[] = await cars_res.json()
         const settings_data: RaceSettings = await settings_res.json()
+        const race_data = await race_res.json()
         
         set_settings(settings_data)
+        set_race_state(race_data.state)
         const my_cars = all_cars.filter(car => my_car_ids.includes(car.id))
         set_cars(my_cars)
       } catch (error) {
@@ -45,7 +49,9 @@ export default function Home() {
           <Subheading>Entrant</Subheading>
           <Heading className="mt-2">My Registrations</Heading>
         </div>
-        <Button href="/register">Register Another Car</Button>
+        {race_state === 'REGISTRATION' && (
+          <Button href="/register">Register Another Car</Button>
+        )}
       </div>
 
       <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
@@ -54,7 +60,9 @@ export default function Home() {
         ) : cars.length === 0 ? (
           <div className="col-span-full py-12 text-center">
             <p className="text-gray-500">You haven't registered any cars yet.</p>
-            <Button href="/register" className="mt-6">Register Your First Car</Button>
+            {race_state === 'REGISTRATION' && (
+              <Button href="/register" className="mt-6">Register Your First Car</Button>
+            )}
           </div>
         ) : (
           cars.map((car) => (
@@ -80,10 +88,11 @@ export default function Home() {
                   <h3 className="text-lg font-bold text-gray-950">{car.car_name}</h3>
                   <span className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${
                     car.registration_status === 'REGISTERED' ? 'bg-green-100 text-green-700' :
-                    car.registration_status === 'REVIEW' ? 'bg-yellow-100 text-yellow-700' :
-                    'bg-gray-100 text-gray-600'
+                    car.registration_status === 'REVIEW' ? 'bg-blue-100 text-blue-700' :
+                    'bg-amber-100 text-amber-700'
                   }`}>
-                    {car.registration_status === 'STARTED' ? 'Registration Started' : car.registration_status}
+                    {car.registration_status === 'STARTED' ? 'Registration Started' : 
+                     car.registration_status === 'REVIEW' ? 'Under Review' : 'Registered'}
                   </span>
                 </div>
                 <p className="mt-1 text-sm text-gray-500">{car.scout_level} Level</p>
@@ -97,7 +106,7 @@ export default function Home() {
                   </div>
                   <div className="flex flex-col gap-1">
                     <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Avg Time</div>
-                    <div className="text-sm font-bold text-[#D15052]">
+                    <div className="text-sm font-bold text-blue-600">
                       {car.average_time ? `${car.average_time.toFixed(3)}s` : '--.---'}
                     </div>
                   </div>

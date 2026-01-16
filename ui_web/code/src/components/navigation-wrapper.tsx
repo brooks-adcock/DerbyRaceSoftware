@@ -5,7 +5,7 @@ import { Navbar } from '@/components/navbar'
 
 export function NavigationWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const show_navbar = pathname !== '/'
+  const show_navbar = pathname !== '/' && pathname !== '/public'
 
   return (
     <>

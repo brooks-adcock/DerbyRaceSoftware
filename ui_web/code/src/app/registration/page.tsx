@@ -123,11 +123,11 @@ export default function RegistrationListPage() {
                   <td className="py-4 pr-4">
                     <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${
                       car.registration_status === 'REGISTERED' ? 'bg-green-100 text-green-700' :
-                      car.registration_status === 'REVIEW' ? 'bg-yellow-100 text-yellow-700' :
-                      'bg-gray-100 text-gray-600'
+                      car.registration_status === 'REVIEW' ? 'bg-blue-100 text-blue-700' :
+                      'bg-amber-100 text-amber-700'
                     }`}>
                       {car.registration_status === 'STARTED' ? 'Reg. Started' : 
-                       car.registration_status === 'REVIEW' ? 'Review' : 'Registered'}
+                       car.registration_status === 'REVIEW' ? 'Under Review' : 'Registered'}
                     </span>
                   </td>
                 </tr>

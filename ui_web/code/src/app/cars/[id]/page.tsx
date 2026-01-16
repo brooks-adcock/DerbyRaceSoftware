@@ -116,7 +116,11 @@ export default function CarAdminPage() {
               <select
                 value={car.registration_status}
                 onChange={(e) => handleUpdate({ registration_status: e.target.value as RegistrationStatus })}
-                className="mt-4 block w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm font-bold text-gray-950 focus:border-gray-950 focus:outline-none shadow-sm"
+                className={`mt-4 block w-full rounded-lg border px-4 py-3 text-sm font-bold focus:outline-none shadow-sm transition-colors ${
+                  car.registration_status === 'REGISTERED' ? 'border-green-200 bg-green-50 text-green-700' :
+                  car.registration_status === 'REVIEW' ? 'border-blue-200 bg-blue-50 text-blue-700' :
+                  'border-amber-200 bg-amber-50 text-amber-700'
+                }`}
               >
                 <option value="STARTED">Registration Started</option>
                 <option value="REVIEW">Under Review</option>

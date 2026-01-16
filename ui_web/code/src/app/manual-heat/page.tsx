@@ -13,16 +13,16 @@ export default function ManualHeatPage() {
   const [is_running, set_is_running] = useState(false)
 
   useEffect(() => {
-    fetch('/api/settings').then(res => res.json()).then(data => {
-      set_settings(data)
-      set_lane_cars(new Array(data.n_tracks).fill(''))
-      set_lane_times(new Array(data.n_tracks).fill(''))
+    fetch('/api/settings').then(res => res.json()).then(settings_data => {
+      set_settings(settings_data)
+      set_lane_cars(new Array(settings_data.n_tracks).fill(''))
+      set_lane_times(new Array(settings_data.n_tracks).fill(''))
     })
   }, [])
 
   const handleGo = async () => {
     set_is_running(true)
-    // In a real app, this would trigger the gate
+    // For manual heats, we'll talk to /api/race later if we want to save them
     console.log('Running manual heat with cars:', lane_cars)
   }
 

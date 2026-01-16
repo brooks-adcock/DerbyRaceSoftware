@@ -67,7 +67,7 @@ export default function ResultsPage() {
 
       <div className="mt-12 space-y-16">
         <section>
-          <h2 className="text-2xl font-black italic text-[#D15052] uppercase">Speed Standings</h2>
+          <h2 className="text-2xl font-black italic text-blue-600 uppercase">Speed Standings</h2>
           <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-2">
             {SCOUT_LEVELS.map(level => {
               const results = getSpeedResults(level)
@@ -105,7 +105,7 @@ export default function ResultsPage() {
         </section>
 
         <section>
-          <h2 className="text-2xl font-black italic text-[#D15052] uppercase">Beauty Standings</h2>
+          <h2 className="text-2xl font-black italic text-blue-600 uppercase">Beauty Standings</h2>
           <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-2">
             {SCOUT_LEVELS.map(level => {
               const results = getBeautyResults(level)

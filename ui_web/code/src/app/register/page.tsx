@@ -18,9 +18,24 @@ export default function RegisterPage() {
   const [scout_level, set_scout_level] = useState('Wolf')
   const [photo, set_photo] = useState<File | null>(null)
   const [is_submitting, set_is_submitting] = useState(false)
+  const [race_state, set_race_state] = useState<string>('')
+  const [is_loading, set_is_loading] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/race')
+      .then(res => res.json())
+      .then(data => {
+        set_race_state(data.state)
+        set_is_loading(false)
+      })
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (race_state !== 'REGISTRATION') {
+      alert('Registration is currently closed.')
+      return
+    }
     set_is_submitting(true)
 
     const form_data = new FormData()
@@ -57,6 +72,20 @@ export default function RegisterPage() {
     } finally {
       set_is_submitting(false)
     }
+  }
+
+  if (is_loading) return <Container className="py-24">Loading...</Container>
+
+  if (race_state !== 'REGISTRATION') {
+    return (
+      <Container className="py-24 text-center">
+        <Heading>Registration Closed</Heading>
+        <p className="mt-4 text-gray-600">
+          The registration period for this race has ended. Please contact a race official if you need assistance.
+        </p>
+        <Button href="/" className="mt-8">View My Cars</Button>
+      </Container>
+    )
   }
 
   return (

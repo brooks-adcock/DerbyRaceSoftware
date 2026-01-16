@@ -4,9 +4,10 @@ import path from 'path';
 const DATA_DIR = path.join(process.cwd(), 'data');
 const CARS_FILE = path.join(DATA_DIR, 'cars.json');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
-const HEATS_FILE = path.join(DATA_DIR, 'heats.json');
+const RACE_FILE = path.join(DATA_DIR, 'race.json');
 
 export type RegistrationStatus = 'STARTED' | 'REVIEW' | 'REGISTERED';
+export type RaceState = 'REGISTRATION' | 'RACING' | 'COMPLETE';
 
 export interface TrackTime {
   time: number;
@@ -50,6 +51,12 @@ export interface Heat {
   id: number;
   lane_cars: (number | null)[]; // Car IDs
   lane_times: (number | null)[];
+}
+
+export interface Race {
+  state: RaceState;
+  heats: Heat[];
+  manual_runs: Heat[];
 }
 
 async function ensureDataDir() {
@@ -96,11 +103,15 @@ export const Storage = {
     await writeJson(SETTINGS_FILE, settings);
   },
 
-  async getHeats(): Promise<Heat[]> {
-    return readJson<Heat[]>(HEATS_FILE, []);
+  async getRace(): Promise<Race> {
+    return readJson<Race>(RACE_FILE, {
+      state: 'REGISTRATION',
+      heats: [],
+      manual_runs: [],
+    });
   },
 
-  async saveHeats(heats: Heat[]): Promise<void> {
-    await writeJson(HEATS_FILE, heats);
+  async saveRace(race: Race): Promise<void> {
+    await writeJson(RACE_FILE, race);
   },
 };
