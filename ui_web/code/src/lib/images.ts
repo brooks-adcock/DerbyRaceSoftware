@@ -38,7 +38,7 @@ export async function processAndSavePhoto(file_buffer: Buffer): Promise<string> 
   const file_path = path.join(PHOTOS_DIR, file_name);
 
   await sharp(processed_buffer)
-    .resize(800, 800, { fit: 'inside', withoutEnlargement: true })
+    .resize(800, 800, { fit: 'cover', position: 'center' })
     .jpeg({ quality: 80 })
     .toFile(file_path);
 

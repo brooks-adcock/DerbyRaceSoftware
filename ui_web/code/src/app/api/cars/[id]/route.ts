@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Storage, Car } from '@/lib/storage';
+import { Storage, Car, RegistrationStatus } from '@/lib/storage';
+import { processAndSavePhoto } from '@/lib/images';
 
 export async function GET(
   request: NextRequest,
@@ -18,12 +19,56 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const updates = await request.json();
+    const content_type = request.headers.get('content-type') || '';
+    let updates: Partial<Car> = {};
+
+    if (content_type.includes('multipart/form-data')) {
+      const form_data = await request.formData();
+      const first_name = form_data.get('first_name') as string;
+      const last_name = form_data.get('last_name') as string;
+      const car_name = form_data.get('car_name') as string;
+      const is_beauty = form_data.get('is_beauty') === 'true';
+      const win_preference = form_data.get('win_preference') as 'beauty' | 'speed';
+      const scout_level = form_data.get('scout_level') as string;
+      const photo_file = form_data.get('photo') as File | null;
+
+      updates = {
+        first_name: first_name || undefined,
+        last_name: last_name || undefined,
+        car_name: car_name || undefined,
+        is_beauty: form_data.has('is_beauty') ? is_beauty : undefined,
+        win_preference: (win_preference as any) || undefined,
+        scout_level: scout_level || undefined,
+      };
+
+      if (photo_file && photo_file.size > 0) {
+        const buffer = Buffer.from(await photo_file.arrayBuffer());
+        updates.photo_hash = await processAndSavePhoto(buffer);
+      }
+    } else {
+      updates = await request.json();
+    }
+
     const cars = await Storage.getCars();
     const car_index = cars.findIndex((c) => c.id === parseInt(params.id));
 
     if (car_index === -1) {
       return NextResponse.json({ error: 'Car not found' }, { status: 404 });
+    }
+
+    // Check if editability is allowed
+    const race = await Storage.getRace();
+    const car = cars[car_index];
+    const finalized_statuses: RegistrationStatus[] = ['REGISTERED', 'DISQUALIFIED', 'COURTESY'];
+    
+    // Only enforce editability rules for public registration updates (FormData)
+    if (content_type.includes('multipart/form-data')) {
+      if (race.state !== 'REGISTRATION') {
+        return NextResponse.json({ error: 'Registration is closed' }, { status: 403 });
+      }
+      if (finalized_statuses.includes(car.registration_status)) {
+        return NextResponse.json({ error: 'Car registration is finalized' }, { status: 403 });
+      }
     }
 
     const updated_car = { ...cars[car_index], ...updates };

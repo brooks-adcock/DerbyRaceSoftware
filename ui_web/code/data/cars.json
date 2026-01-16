@@ -14,19 +14,20 @@
     "is_length_pass": true,
     "track_times": [
       {
-        "time": 0,
-        "is_included": false
+        "time": -0.0001,
+        "is_included": true
       }
     ],
-    "beauty_scores": []
+    "beauty_scores": [],
+    "average_time": -0.0001
   },
   {
     "id": 2,
     "first_name": "Foo",
-    "last_name": "Two",
+    "last_name": "Fighter",
     "car_name": "Foo Foo",
     "is_beauty": false,
-    "win_preference": "speed",
+    "win_preference": "beauty",
     "photo_hash": "54dcf14f-e71e-44b4-b3f4-4d98751d1ee7",
     "scout_level": "Family",
     "registration_status": "STARTED",

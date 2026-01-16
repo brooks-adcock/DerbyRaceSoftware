@@ -4,14 +4,22 @@ import { useState, useEffect } from 'react'
 import { Container } from '@/components/container'
 import { Heading, Subheading } from '@/components/text'
 import { Button } from '@/components/button'
-import { Car, RaceSettings } from '@/lib/storage'
+import { Car, RaceSettings, RegistrationStatus } from '@/lib/storage'
 import Image from 'next/image'
+import Link from 'next/link'
+import { clsx } from 'clsx'
 
 export default function Home() {
   const [cars, set_cars] = useState<Car[]>([])
   const [settings, set_settings] = useState<RaceSettings | null>(null)
   const [race_state, set_race_state] = useState<string>('')
   const [is_loading, set_is_loading] = useState(true)
+
+  const isEditable = (car: Car) => {
+    if (race_state !== 'REGISTRATION') return false
+    const finalized_statuses: RegistrationStatus[] = ['REGISTERED', 'DISQUALIFIED', 'COURTESY']
+    return !finalized_statuses.includes(car.registration_status)
+  }
 
   useEffect(() => {
     const fetchMyCars = async () => {
@@ -65,9 +73,20 @@ export default function Home() {
             )}
           </div>
         ) : (
-          cars.map((car) => (
-            <div key={car.id} className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-              <div className="relative h-48 w-full bg-gray-100">
+          cars.map((car) => {
+            const is_editable = isEditable(car)
+            const CardWrapper = is_editable ? Link : 'div'
+            
+            return (
+              <CardWrapper 
+                key={car.id} 
+                href={is_editable ? `/register?id=${car.id}` : undefined}
+                className={clsx(
+                  "overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all",
+                  is_editable && "hover:ring-2 hover:ring-blue-600 hover:shadow-md cursor-pointer"
+                )}
+              >
+                <div className="relative h-48 w-full bg-gray-100">
                 {car.photo_hash ? (
                   <Image
                     src={`/photos/${car.photo_hash}.jpg`}
@@ -135,10 +154,11 @@ export default function Home() {
                   </p>
                 )}
               </div>
-            </div>
-          ))
-        )}
-      </div>
-    </Container>
-  )
+            </CardWrapper>
+          )
+        })
+      )}
+    </div>
+  </Container>
+)
 }

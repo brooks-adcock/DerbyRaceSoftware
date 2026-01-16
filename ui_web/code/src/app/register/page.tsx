@@ -1,15 +1,19 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { Container } from '@/components/container'
 import { Heading, Subheading } from '@/components/text'
 import { Button } from '@/components/button'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Car } from '@/lib/storage'
 
 const SCOUT_LEVELS = ['Lion', 'Tiger', 'Wolf', 'Bear', 'Webelos', 'AOL', 'Family']
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter()
+  const search_params = useSearchParams()
+  const edit_id = search_params.get('id')
+
   const [first_name, set_first_name] = useState('')
   const [last_name, set_last_name] = useState('')
   const [car_name, set_car_name] = useState('')
@@ -17,18 +21,40 @@ export default function RegisterPage() {
   const [win_preference, set_win_preference] = useState<'beauty' | 'speed'>('speed')
   const [scout_level, set_scout_level] = useState('Wolf')
   const [photo, set_photo] = useState<File | null>(null)
+  const [existing_photo_hash, set_existing_photo_hash] = useState('')
   const [is_submitting, set_is_submitting] = useState(false)
   const [race_state, set_race_state] = useState<string>('')
   const [is_loading, set_is_loading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/race')
-      .then(res => res.json())
-      .then(data => {
-        set_race_state(data.state)
+    const loadData = async () => {
+      try {
+        const race_res = await fetch('/api/race')
+        const race_data = await race_res.json()
+        set_race_state(race_data.state)
+
+        if (edit_id) {
+          const car_res = await fetch(`/api/cars/${edit_id}`)
+          if (car_res.ok) {
+            const car_data: Car = await car_res.json()
+            set_first_name(car_data.first_name)
+            set_last_name(car_data.last_name)
+            set_car_name(car_data.car_name)
+            set_is_beauty(car_data.is_beauty)
+            set_win_preference(car_data.win_preference)
+            set_scout_level(car_data.scout_level)
+            set_existing_photo_hash(car_data.photo_hash)
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load data:', error)
+      } finally {
         set_is_loading(false)
-      })
-  }, [])
+      }
+    }
+
+    loadData()
+  }, [edit_id])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -50,25 +76,31 @@ export default function RegisterPage() {
     }
 
     try {
-      const response = await fetch('/api/cars', {
-        method: 'POST',
+      const url = edit_id ? `/api/cars/${edit_id}` : '/api/cars'
+      const method = edit_id ? 'PATCH' : 'POST'
+      
+      const response = await fetch(url, {
+        method,
         body: form_data,
       })
+      
       const data = await response.json()
       if (response.ok) {
-        // Save to local storage
-        const my_cars = JSON.parse(localStorage.getItem('my_cars') || '[]')
-        if (!my_cars.includes(data.id)) {
-          my_cars.push(data.id)
-          localStorage.setItem('my_cars', JSON.stringify(my_cars))
+        if (!edit_id) {
+          // Save to local storage for new registrations
+          const my_cars = JSON.parse(localStorage.getItem('my_cars') || '[]')
+          if (!my_cars.includes(data.id)) {
+            my_cars.push(data.id)
+            localStorage.setItem('my_cars', JSON.stringify(my_cars))
+          }
         }
         router.push('/')
       } else {
-        alert(data.error || 'Failed to register')
+        alert(data.error || 'Failed to save registration')
       }
     } catch (error) {
       console.error(error)
-      alert('An error occurred during registration')
+      alert('An error occurred while saving')
     } finally {
       set_is_submitting(false)
     }
@@ -90,8 +122,8 @@ export default function RegisterPage() {
 
   return (
     <Container className="py-24">
-      <Subheading>Registration</Subheading>
-      <Heading className="mt-2">Enter Your Car Details</Heading>
+      <Subheading>{edit_id ? 'Edit Registration' : 'Registration'}</Subheading>
+      <Heading className="mt-2">{edit_id ? `Editing Car #${edit_id}` : 'Enter Your Car Details'}</Heading>
 
       <form onSubmit={handleSubmit} className="mt-12 max-w-xl space-y-8">
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
@@ -184,22 +216,54 @@ export default function RegisterPage() {
         </div>
 
         <div>
-          <label htmlFor="photo" className="block text-sm font-medium text-gray-950">
-            Car Picture
+          <label className="block text-sm font-medium text-gray-950">
+            Car Picture {edit_id && '(optional, leave empty to keep existing)'}
           </label>
-          <input
-            type="file"
-            id="photo"
-            accept="image/*"
-            onChange={(e) => set_photo(e.target.files?.[0] || null)}
-            className="mt-2 block w-full text-sm text-gray-500 file:mr-4 file:rounded-full file:border-0 file:bg-gray-950 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-gray-800"
-          />
+          {existing_photo_hash && !photo && (
+            <div className="mt-2 relative size-32 rounded-lg overflow-hidden border border-gray-200">
+              <img 
+                src={`/photos/${existing_photo_hash}.jpg`} 
+                alt="Existing car" 
+                className="size-full object-cover"
+              />
+            </div>
+          )}
+          <div className="mt-2 flex items-center gap-4">
+            <input
+              type="file"
+              id="photo"
+              style={{ display: 'none' }}
+              accept=".jpg,.jpeg,.png,.heic"
+              onChange={(e) => set_photo(e.target.files?.[0] || null)}
+            />
+            <Button
+              type="button"
+              outline
+              onClick={() => document.getElementById('photo')?.click()}
+            >
+              {photo ? 'Change Photo' : 'Choose Photo'}
+            </Button>
+            {photo && <span className="text-sm text-gray-500">{photo.name}</span>}
+          </div>
         </div>
 
-        <Button type="submit" disabled={is_submitting} className="w-full">
-          {is_submitting ? 'Registering...' : 'Register Car'}
-        </Button>
+        <div className="flex gap-4">
+          <Button type="button" variant="outline" onClick={() => router.push('/')} className="flex-1">
+            Cancel
+          </Button>
+          <Button type="submit" disabled={is_submitting} className="flex-1">
+            {is_submitting ? 'Saving...' : (edit_id ? 'Update Registration' : 'Register Car')}
+          </Button>
+        </div>
       </form>
     </Container>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<Container className="py-24">Loading...</Container>}>
+      <RegisterForm />
+    </Suspense>
   )
 }

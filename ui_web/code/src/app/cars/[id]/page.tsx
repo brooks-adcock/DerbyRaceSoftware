@@ -62,18 +62,8 @@ export default function CarAdminPage() {
     }
   }
 
-  const addTime = () => {
-    const new_times = [...car.track_times, { time: 0, is_included: true }]
-    handleUpdate({ track_times: new_times })
-  }
-
-  const updateTime = (index: number, time: number) => {
-    const new_times = [...car.track_times]
-    new_times[index].time = time
-    handleUpdate({ track_times: new_times })
-  }
-
   const toggleTimeIncluded = (index: number) => {
+    if (!car) return
     const new_times = [...car.track_times]
     new_times[index].is_included = !new_times[index].is_included
     handleUpdate({ track_times: new_times })
@@ -110,27 +100,6 @@ export default function CarAdminPage() {
               </div>
               <div className="mt-1 text-sm text-gray-500 font-medium">{car.scout_level} Level</div>
             </div>
-
-            <div className="rounded-xl bg-gray-50 p-6">
-              <div className="text-xs font-bold text-gray-400 uppercase tracking-widest">Registration Status</div>
-              <select
-                value={car.registration_status}
-                onChange={(e) => handleUpdate({ registration_status: e.target.value as RegistrationStatus })}
-                className={`mt-4 block w-full rounded-lg border px-4 py-3 text-sm font-bold focus:outline-none shadow-sm transition-colors ${
-                  car.registration_status === 'REGISTERED' ? 'border-green-200 bg-green-50 text-green-700' :
-                  car.registration_status === 'REVIEW' ? 'border-blue-200 bg-blue-50 text-blue-700' :
-                  car.registration_status === 'DISQUALIFIED' ? 'border-red-200 bg-red-50 text-red-700' :
-                  car.registration_status === 'COURTESY' ? 'border-purple-200 bg-purple-50 text-purple-700' :
-                  'border-amber-200 bg-amber-50 text-amber-700'
-                }`}
-              >
-                <option value="STARTED">Registration Started</option>
-                <option value="REVIEW">Under Review</option>
-                <option value="REGISTERED">Fully Registered</option>
-                <option value="COURTESY">Courtesy Run (No Score)</option>
-                <option value="DISQUALIFIED">Disqualified</option>
-              </select>
-            </div>
           </div>
         </div>
 
@@ -139,28 +108,7 @@ export default function CarAdminPage() {
           <section>
             <Subheading>Inspection</Subheading>
             <div className="mt-6 grid grid-cols-1 gap-8 sm:grid-cols-2">
-              <div className="rounded-xl border border-gray-200 p-6">
-                <label className="block text-sm font-medium text-gray-950">Weight</label>
-                <div className="mt-2 flex gap-2">
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={weight_input}
-                    onChange={(e) => handleWeightChange(e.target.value)}
-                    className="block w-full rounded-lg border border-gray-200 px-4 py-2 text-gray-950 focus:border-gray-950 focus:outline-none"
-                  />
-                  <button
-                    onClick={toggleWeightUnit}
-                    className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200"
-                  >
-                    {weight_unit}
-                  </button>
-                </div>
-                {car.weight_oz > 5 && (
-                  <p className="mt-2 text-xs font-medium text-red-600">Warning: Over 5oz limit!</p>
-                )}
-              </div>
-
+              {/* Left Column: Rules Checklist */}
               <div className="space-y-4 rounded-xl border border-gray-200 p-6">
                 <div className="flex items-center gap-3">
                   <input
@@ -186,6 +134,88 @@ export default function CarAdminPage() {
                     Length passes
                   </label>
                 </div>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="width_pass"
+                    checked={car.is_width_pass}
+                    onChange={(e) => handleUpdate({ is_width_pass: e.target.checked })}
+                    className="size-4 rounded border-gray-300 text-gray-950 focus:ring-gray-950"
+                  />
+                  <label htmlFor="width_pass" className="text-sm font-medium text-gray-950">
+                    Width passes
+                  </label>
+                </div>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="ground_clearance_pass"
+                    checked={car.is_ground_clearance_pass}
+                    onChange={(e) => handleUpdate({ is_ground_clearance_pass: e.target.checked })}
+                    className="size-4 rounded border-gray-300 text-gray-950 focus:ring-gray-950"
+                  />
+                  <label htmlFor="ground_clearance_pass" className="text-sm font-medium text-gray-950">
+                    Ground clearance
+                  </label>
+                </div>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="no_loose_parts"
+                    checked={car.is_no_loose_parts}
+                    onChange={(e) => handleUpdate({ is_no_loose_parts: e.target.checked })}
+                    className="size-4 rounded border-gray-300 text-gray-950 focus:ring-gray-950"
+                  />
+                  <label htmlFor="no_loose_parts" className="text-sm font-medium text-gray-950">
+                    No loose parts
+                  </label>
+                </div>
+              </div>
+
+              {/* Right Column: Weight and Status */}
+              <div className="space-y-8">
+                <div className="rounded-xl border border-gray-200 p-6">
+                  <label className="block text-sm font-medium text-gray-950">Weight</label>
+                  <div className="mt-2 flex gap-2">
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={weight_input}
+                      onChange={(e) => handleWeightChange(e.target.value)}
+                      className="block w-full rounded-lg border border-gray-200 px-4 py-2 text-gray-950 focus:border-gray-950 focus:outline-none"
+                    />
+                    <button
+                      onClick={toggleWeightUnit}
+                      className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200"
+                    >
+                      {weight_unit}
+                    </button>
+                  </div>
+                  {car.weight_oz > 5 && (
+                    <p className="mt-2 text-xs font-medium text-red-600">Warning: Over 5oz limit!</p>
+                  )}
+                </div>
+
+                <div className="rounded-xl border border-gray-200 p-6">
+                  <label className="block text-sm font-medium text-gray-950">Registration Status</label>
+                  <select
+                    value={car.registration_status}
+                    onChange={(e) => handleUpdate({ registration_status: e.target.value as RegistrationStatus })}
+                    className={`mt-2 block w-full rounded-lg border px-4 py-2 text-sm font-bold focus:outline-none shadow-sm transition-colors ${
+                      car.registration_status === 'REGISTERED' ? 'border-green-200 bg-green-50 text-green-700' :
+                      car.registration_status === 'REVIEW' ? 'border-blue-200 bg-blue-50 text-blue-700' :
+                      car.registration_status === 'DISQUALIFIED' ? 'border-red-200 bg-red-50 text-red-700' :
+                      car.registration_status === 'COURTESY' ? 'border-purple-200 bg-purple-50 text-purple-700' :
+                      'border-amber-200 bg-amber-50 text-amber-700'
+                    }`}
+                  >
+                    <option value="STARTED">Registration Started</option>
+                    <option value="REVIEW">Under Review</option>
+                    <option value="REGISTERED">Fully Registered</option>
+                    <option value="COURTESY">Courtesy Run (No Score)</option>
+                    <option value="DISQUALIFIED">Disqualified</option>
+                  </select>
+                </div>
               </div>
             </div>
           </section>
@@ -194,6 +224,52 @@ export default function CarAdminPage() {
           <section>
             <Subheading>Race Performance</Subheading>
             <div className="mt-6 space-y-6">
+              <div className="rounded-xl border border-gray-200 p-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-gray-950">Track Times</h3>
+                </div>
+                <div className="mt-4 overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-100">
+                        <th className="pb-3 font-semibold text-gray-500">Heat ID</th>
+                        <th className="pb-3 font-semibold text-gray-500">Track #</th>
+                        <th className="pb-3 font-semibold text-gray-500">Time</th>
+                        <th className="pb-3 font-semibold text-gray-500">Included</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {car.track_times.length > 0 ? (
+                        car.track_times.map((t, i) => (
+                          <tr key={i}>
+                            <td className="py-3 text-gray-950">{t.heat_id || '--'}</td>
+                            <td className="py-3 text-gray-950">{t.track_number || '--'}</td>
+                            <td className="py-3 font-mono text-gray-950">{t.time.toFixed(4)}s</td>
+                            <td className="py-3">
+                              <label className="flex items-center gap-2 text-sm text-gray-600">
+                                <input
+                                  type="checkbox"
+                                  checked={t.is_included}
+                                  onChange={() => toggleTimeIncluded(i)}
+                                  className="size-4 rounded border-gray-300 text-gray-950 focus:ring-gray-950"
+                                />
+                                {t.is_included ? 'Included' : 'Excluded'}
+                              </label>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={4} className="py-8 text-center text-gray-500">
+                            No track times recorded yet.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div className="rounded-xl bg-gray-50 p-6">
                   <div className="text-xs font-medium text-gray-500 uppercase">Average Time</div>
@@ -212,35 +288,6 @@ export default function CarAdminPage() {
                   <div className="mt-1 text-2xl font-bold text-gray-950">
                     {car.class_place || '--'}
                   </div>
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-gray-200 p-6">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-gray-950">Track Times</h3>
-                  <Button variant="outline" onClick={addTime}>Add Time</Button>
-                </div>
-                <div className="mt-4 space-y-3">
-                  {car.track_times.map((t, i) => (
-                    <div key={i} className="flex items-center gap-4">
-                      <input
-                        type="number"
-                        step="0.0001"
-                        value={t.time}
-                        onChange={(e) => updateTime(i, parseFloat(e.target.value))}
-                        className="block w-24 rounded-lg border border-gray-200 px-3 py-1 text-sm focus:border-gray-950 focus:outline-none"
-                      />
-                      <label className="flex items-center gap-2 text-sm text-gray-600">
-                        <input
-                          type="checkbox"
-                          checked={t.is_included}
-                          onChange={() => toggleTimeIncluded(i)}
-                          className="size-4 rounded border-gray-300 text-gray-950"
-                        />
-                        Include
-                      </label>
-                    </div>
-                  ))}
                 </div>
               </div>
             </div>

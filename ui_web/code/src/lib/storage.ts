@@ -10,6 +10,8 @@ export type RegistrationStatus = 'STARTED' | 'REVIEW' | 'REGISTERED' | 'DISQUALI
 export type RaceState = 'REGISTRATION' | 'RACING' | 'COMPLETE';
 
 export interface TrackTime {
+  heat_id?: number;
+  track_number?: number;
   time: number;
   is_included: boolean;
 }
@@ -27,6 +29,9 @@ export interface Car {
   weight_oz: number;
   is_wheels_roll: boolean;
   is_length_pass: boolean;
+  is_width_pass: boolean;
+  is_ground_clearance_pass: boolean;
+  is_no_loose_parts: boolean;
   track_times: TrackTime[];
   average_time?: number;
   overall_place?: number;
