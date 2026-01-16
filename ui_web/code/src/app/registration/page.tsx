@@ -124,10 +124,14 @@ export default function RegistrationListPage() {
                     <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${
                       car.registration_status === 'REGISTERED' ? 'bg-green-100 text-green-700' :
                       car.registration_status === 'REVIEW' ? 'bg-blue-100 text-blue-700' :
+                      car.registration_status === 'DISQUALIFIED' ? 'bg-red-100 text-red-700' :
+                      car.registration_status === 'COURTESY' ? 'bg-purple-100 text-purple-700' :
                       'bg-amber-100 text-amber-700'
                     }`}>
                       {car.registration_status === 'STARTED' ? 'Reg. Started' : 
-                       car.registration_status === 'REVIEW' ? 'Under Review' : 'Registered'}
+                       car.registration_status === 'REVIEW' ? 'Under Review' : 
+                       car.registration_status === 'DISQUALIFIED' ? 'Disqualified' : 
+                       car.registration_status === 'COURTESY' ? 'Courtesy Run' : 'Registered'}
                     </span>
                   </td>
                 </tr>

@@ -6,7 +6,7 @@ const CARS_FILE = path.join(DATA_DIR, 'cars.json');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 const RACE_FILE = path.join(DATA_DIR, 'race.json');
 
-export type RegistrationStatus = 'STARTED' | 'REVIEW' | 'REGISTERED';
+export type RegistrationStatus = 'STARTED' | 'REVIEW' | 'REGISTERED' | 'DISQUALIFIED' | 'COURTESY';
 export type RaceState = 'REGISTRATION' | 'RACING' | 'COMPLETE';
 
 export interface TrackTime {
@@ -47,10 +47,14 @@ export interface RaceSettings {
   };
 }
 
+export interface Lane {
+  car_id: number | null;
+  time: number | null;
+}
+
 export interface Heat {
   id: number;
-  lane_cars: (number | null)[]; // Car IDs
-  lane_times: (number | null)[];
+  lanes: Lane[];
 }
 
 export interface Race {

@@ -9,9 +9,9 @@
     "photo_hash": "1335e65c-6c95-42b9-b851-fcba1e277158",
     "scout_level": "Wolf",
     "registration_status": "STARTED",
-    "weight_oz": 0,
-    "is_wheels_roll": false,
-    "is_length_pass": false,
+    "weight_oz": 5,
+    "is_wheels_roll": true,
+    "is_length_pass": true,
     "track_times": [
       {
         "time": 0,

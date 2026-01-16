@@ -119,12 +119,16 @@ export default function CarAdminPage() {
                 className={`mt-4 block w-full rounded-lg border px-4 py-3 text-sm font-bold focus:outline-none shadow-sm transition-colors ${
                   car.registration_status === 'REGISTERED' ? 'border-green-200 bg-green-50 text-green-700' :
                   car.registration_status === 'REVIEW' ? 'border-blue-200 bg-blue-50 text-blue-700' :
+                  car.registration_status === 'DISQUALIFIED' ? 'border-red-200 bg-red-50 text-red-700' :
+                  car.registration_status === 'COURTESY' ? 'border-purple-200 bg-purple-50 text-purple-700' :
                   'border-amber-200 bg-amber-50 text-amber-700'
                 }`}
               >
                 <option value="STARTED">Registration Started</option>
                 <option value="REVIEW">Under Review</option>
                 <option value="REGISTERED">Fully Registered</option>
+                <option value="COURTESY">Courtesy Run (No Score)</option>
+                <option value="DISQUALIFIED">Disqualified</option>
               </select>
             </div>
           </div>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Container } from '@/components/container'
-import { Car, Heat, Race, RaceState } from '@/lib/storage'
+import type { Car, Heat, Race, RaceState } from '@/lib/storage'
 import Image from 'next/image'
 import QRCode from 'qrcode'
 import { clsx } from 'clsx'
@@ -80,38 +80,48 @@ export default function PublicPage() {
   }, [race?.state])
 
   if (is_loading || !race) return (
-    <div className="flex h-screen items-center justify-center bg-gray-950 text-white font-sans">
-      <div className="text-4xl font-black animate-pulse tracking-tighter italic">PACK 123</div>
+    <div className="flex h-screen items-center justify-center bg-black text-white font-sans">
+      <div className="text-4xl font-black animate-pulse tracking-tighter italic">PACK 451</div>
     </div>
   )
 
   if (race.state === 'REGISTRATION') {
     return (
-      <div className="relative min-h-screen flex flex-col items-center justify-center bg-gray-950 text-white p-12 overflow-hidden selection:bg-white/30">
+      <div className="relative min-h-screen flex flex-col items-center justify-center bg-black text-white p-12 overflow-hidden selection:bg-white/30">
         {/* Decorative background elements */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.05),transparent_50%)]" />
-        <div className="absolute -top-[10%] -left-[10%] size-[40%] rounded-full bg-white/5 blur-[120px]" />
-        <div className="absolute -bottom-[10%] -right-[10%] size-[40%] rounded-full bg-white/5 blur-[120px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.02),transparent_50%)]" />
+        <div className="absolute -top-[10%] -left-[10%] size-[40%] rounded-full bg-neutral-500/5 blur-[120px]" />
+        <div className="absolute -bottom-[10%] -right-[10%] size-[40%] rounded-full bg-neutral-500/5 blur-[120px]" />
         
         <div className="relative z-10 w-full max-w-7xl">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
             {/* Left Column: Instructions */}
             <div className="flex flex-col gap-16">
               <div className="space-y-4">
-                <div className="inline-block rounded-full bg-blue-600/10 px-4 py-1.5 text-sm font-bold uppercase tracking-widest text-blue-400 ring-1 ring-blue-600/20">
-                  Step-by-Step Guide
-                </div>
                 <h1 className="text-8xl font-black tracking-tighter uppercase italic leading-[0.9]">
                   Register<br />
                   <span className="text-blue-600">Your Car</span>
                 </h1>
+                
+                <div className="inline-block rounded-2xl bg-white/5 px-6 py-4 ring-1 ring-white/10 backdrop-blur-xl mt-6 shadow-2xl">
+                  <div className="flex items-center gap-6">
+                    <div className="flex flex-col">
+                      <span className="text-3xl font-black italic tracking-tighter text-white leading-none">PACK 451</span>
+                    </div>
+                    <div className="h-10 w-px bg-white/10" />
+                    <div className="flex flex-col">
+                      <span className="text-xs font-black uppercase tracking-[0.3em] text-blue-500/60 leading-none mb-2">Pinewood Derby</span>
+                      <span className="text-3xl font-black italic tracking-tighter text-blue-600 leading-none">2026</span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="grid gap-12">
                 {[
                   { step: 1, title: 'Scan QR Code', desc: 'Point your camera at the screen to start.' },
                   { step: 2, title: 'Enter Info & Photo', desc: 'Add your car details and a cool picture.' },
-                  { step: 3, title: 'Official Check-in', desc: 'Bring your vehicle to the scale for weigh-in.' }
+                  { step: 3, title: 'Official Check-in', desc: 'Bring your vehicle to the registration table.' }
                 ].map((item) => (
                   <div 
                     key={item.step} 
@@ -178,20 +188,20 @@ export default function PublicPage() {
   }
 
   // Find current and next heats for RACING state
-  const current_idx = race.heats.findIndex((h: Heat) => h.lane_times.some(t => t === null && h.lane_cars.some(car_id => car_id !== null)))
+  const current_idx = race.heats.findIndex((h: Heat) => h.lanes.some(l => l.time === null && l.car_id !== null))
   const current_heat = current_idx !== -1 ? race.heats[current_idx] : (race.heats.length > 0 ? race.heats[race.heats.length - 1] : null)
   const next_heat = current_idx !== -1 && current_idx < race.heats.length - 1 ? race.heats[current_idx + 1] : null
 
   if (!current_heat) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-950 text-white">
+      <div className="flex h-screen items-center justify-center bg-black text-white">
         <div className="text-4xl font-bold animate-pulse">Waiting for heats to be generated...</div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className="min-h-screen bg-black text-white">
       {/* Current Heat Main Area */}
       <div className="flex h-[75vh] flex-col p-12">
         <div className="flex items-center justify-between">
@@ -200,8 +210,8 @@ export default function PublicPage() {
         </div>
 
         <div className="mt-12 grid flex-1 grid-cols-1 gap-8 lg:grid-cols-4">
-          {current_heat.lane_cars.map((car_id, i) => {
-            const car = car_id ? cars[car_id] : null
+          {current_heat.lanes.map((lane, i) => {
+            const car = lane.car_id ? cars[lane.car_id] : null
             return (
               <div key={i} className="flex flex-col rounded-[40px] bg-white/5 p-8 ring-1 ring-white/10 backdrop-blur-xl shadow-2xl">
                 <div className="text-2xl font-black text-gray-500 italic uppercase tracking-tighter">Lane {i + 1}</div>
@@ -221,7 +231,7 @@ export default function PublicPage() {
                             ?
                           </div>
                         )}
-                        <div className="absolute top-4 left-4 rounded-3xl bg-gray-950/90 px-8 py-4 shadow-2xl backdrop-blur-xl border border-white/10">
+                        <div className="absolute top-4 left-4 rounded-3xl bg-neutral-900/90 px-8 py-4 shadow-2xl backdrop-blur-xl border border-white/10">
                           <div className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] leading-none text-center">Car #</div>
                           <div className="text-4xl font-black text-white mt-1 leading-none text-center">{car.id}</div>
                         </div>
@@ -238,9 +248,9 @@ export default function PublicPage() {
                 <div className="mt-8 text-center">
                   <div className={clsx(
                     "font-mono text-8xl font-black tracking-tighter transition-colors duration-500",
-                    current_heat.lane_times[i] ? 'text-green-400' : 'text-white/10'
+                    lane.time ? 'text-green-400' : 'text-white/10'
                   )}>
-                    {current_heat.lane_times[i] ? current_heat.lane_times[i]?.toFixed(3) : '0.000'}
+                    {lane.time ? lane.time?.toFixed(3) : '0.000'}
                   </div>
                 </div>
               </div>
@@ -258,8 +268,8 @@ export default function PublicPage() {
               <div className="text-5xl font-black italic text-blue-600 tracking-tighter uppercase leading-none">Heat #{next_heat.id}</div>
             </div>
             <div className="grid flex-1 grid-cols-4 gap-12">
-              {next_heat.lane_cars.map((car_id, i) => {
-                const car = car_id ? cars[car_id] : null
+              {next_heat.lanes.map((lane, i) => {
+                const car = lane.car_id ? cars[lane.car_id] : null
                 if (!car) return <div key={i} />
                 return (
                   <div key={i} className="flex items-center gap-6 overflow-hidden group">

@@ -66,17 +66,28 @@ export default function AdminDashboard() {
       })
   }, [])
 
+  const [error_message, set_error_message] = useState<string | null>(null)
+
   const handleUpdateState = async (new_state: RaceState) => {
     try {
+      set_error_message(null)
       const response = await fetch('/api/race', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'update_state', state: new_state }),
       })
+      
       const data = await response.json()
+      
+      if (!response.ok) {
+        set_error_message(data.error || 'Failed to update race state')
+        return
+      }
+
       set_race_state(data.state)
     } catch (error) {
       console.error('Failed to update race state:', error)
+      set_error_message('A network error occurred')
     }
   }
 
@@ -88,20 +99,27 @@ export default function AdminDashboard() {
           <Heading className="mt-2">Admin Dashboard</Heading>
         </div>
         
-        <div className="flex items-center gap-4 rounded-2xl bg-gray-50 p-2 ring-1 ring-gray-200">
-          {(['REGISTRATION', 'RACING', 'COMPLETE'] as RaceState[]).map((state) => (
-            <button
-              key={state}
-              onClick={() => handleUpdateState(state)}
-              className={`rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-widest transition-all ${
-                race_state === state 
-                  ? 'bg-gray-950 text-white shadow-lg' 
-                  : 'text-gray-500 hover:text-gray-950'
-              }`}
-            >
-              {state}
-            </button>
-          ))}
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex items-center gap-4 rounded-2xl bg-gray-50 p-2 ring-1 ring-gray-200">
+            {(['REGISTRATION', 'RACING', 'COMPLETE'] as RaceState[]).map((state) => (
+              <button
+                key={state}
+                onClick={() => handleUpdateState(state)}
+                className={`rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-widest transition-all ${
+                  race_state === state 
+                    ? 'bg-gray-950 text-white shadow-lg' 
+                    : 'text-gray-500 hover:text-gray-950'
+                }`}
+              >
+                {state}
+              </button>
+            ))}
+          </div>
+          {error_message && (
+            <div className="text-[10px] font-black uppercase tracking-widest text-red-600 animate-pulse">
+              {error_message}
+            </div>
+          )}
         </div>
       </div>
       

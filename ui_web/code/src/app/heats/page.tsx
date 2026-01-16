@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Container } from '@/components/container'
 import { Heading, Subheading } from '@/components/text'
 import { Button } from '@/components/button'
-import { Heat, RaceSettings, Race } from '@/lib/storage'
+import type { Heat, RaceSettings, Race } from '@/lib/storage'
 
 export default function HeatsPage() {
   const [race, set_race] = useState<Race | null>(null)
@@ -23,7 +23,7 @@ export default function HeatsPage() {
 
     // Set current heat index to the first one that isn't fully timed
     if (race_data.heats.length > 0) {
-      const idx = race_data.heats.findIndex((h: Heat) => h.lane_times.some(t => t === null && h.lane_cars.some(car_id => car_id !== null)))
+      const idx = race_data.heats.findIndex((h: Heat) => h.lanes.some(l => l.time === null && l.car_id !== null))
       if (idx !== -1) set_current_heat_index(idx)
     }
   }
@@ -65,9 +65,9 @@ export default function HeatsPage() {
 
   if (is_loading || !settings || !race) return <Container className="py-24">Loading...</Container>
 
-  const heats = race.heats
-  const current_heat = heats[current_heat_index]
-  const is_current_heat_finished = current_heat && current_heat.lane_times.every((t, i) => current_heat.lane_cars[i] === null || t !== null)
+  const heats = race.heats || []
+  const current_heat = heats.length > 0 ? heats[current_heat_index] : null
+  const is_current_heat_finished = current_heat && current_heat.lanes.every((lane) => lane.car_id === null || lane.time !== null)
 
   return (
     <Container className="py-24">
@@ -105,16 +105,16 @@ export default function HeatsPage() {
               </div>
 
               <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                {current_heat.lane_cars.map((car_id, i) => (
+                {current_heat.lanes.map((lane, i) => (
                   <div key={i} className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
                     <div className="text-xs font-medium text-gray-400 uppercase">Lane {i + 1}</div>
                     <div className="mt-2 text-2xl font-bold">
-                      {car_id ? `Car #${car_id}` : 'Empty'}
+                      {lane.car_id ? `Car #${lane.car_id}` : 'Empty'}
                     </div>
                     <div className="mt-4 font-mono text-4xl text-blue-600">
-                      {current_heat.lane_times[i] ? current_heat.lane_times[i]?.toFixed(3) : '--.---'}
+                      {lane.time ? lane.time?.toFixed(3) : '--.---'}
                     </div>
-                    {car_id && !current_heat.lane_times[i] && (
+                    {lane.car_id && !lane.time && (
                       <div className="mt-4 flex gap-2">
                         <input 
                           type="number" 
@@ -152,11 +152,11 @@ export default function HeatsPage() {
                   {heats.map((heat, idx) => (
                     <tr key={heat.id} className={`group ${idx === current_heat_index ? 'bg-yellow-50' : ''}`}>
                       <td className="py-4 pr-4 font-bold">#{heat.id}</td>
-                      {heat.lane_cars.map((car_id, i) => (
+                      {heat.lanes.map((lane, i) => (
                         <td key={i} className="py-4 pr-4">
-                          <div className="text-gray-950">{car_id ? `#${car_id}` : '-'}</div>
+                          <div className="text-gray-950">{lane.car_id ? `#${lane.car_id}` : '-'}</div>
                           <div className="text-xs text-gray-400">
-                            {heat.lane_times[i] ? `${heat.lane_times[i]?.toFixed(3)}s` : '--.---'}
+                            {lane.time ? `${lane.time?.toFixed(3)}s` : '--.---'}
                           </div>
                         </td>
                       ))}
