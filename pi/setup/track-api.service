@@ -13,7 +13,13 @@ WorkingDirectory=/home/pi/track-api
 # Environment configuration
 Environment="NUM_TRACKS=4"
 Environment="API_PORT=8000"
-Environment="SERVO_PIN=18"
+
+# PCA9685 Servo Driver (I2C)
+Environment="SERVO_CHANNEL=0"
+Environment="SERVO_UP_ANGLE=90"
+Environment="SERVO_DOWN_ANGLE=0"
+
+# Finish line sensors (GPIO pins)
 Environment="SENSOR_PIN_1=17"
 Environment="SENSOR_PIN_2=27"
 Environment="SENSOR_PIN_3=22"

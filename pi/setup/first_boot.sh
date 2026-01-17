@@ -32,7 +32,12 @@ sudo apt install -y \
     python3-venv \
     python3-dev \
     libgpiod2 \
+    i2c-tools \
     git
+
+echo ""
+echo "Step 2b: Enabling I2C interface..."
+sudo raspi-config nonint do_i2c 0
 
 echo ""
 echo "Step 3: Setting up application directory..."
@@ -57,10 +62,12 @@ echo "Step 5: Installing Python dependencies..."
 pip install --upgrade pip
 pip install -r requirements.txt
 
-# Install RPi.GPIO for real hardware
+# Install hardware libraries for real Pi
 echo ""
-echo "Step 6: Installing Raspberry Pi GPIO library..."
+echo "Step 6: Installing Raspberry Pi hardware libraries..."
 pip install RPi.GPIO || echo "Note: RPi.GPIO install failed (expected if not on real Pi)"
+pip install adafruit-circuitpython-pca9685 || echo "Note: PCA9685 install failed"
+pip install adafruit-circuitpython-motor || echo "Note: Motor library install failed"
 
 echo ""
 echo "Step 7: Installing systemd service..."

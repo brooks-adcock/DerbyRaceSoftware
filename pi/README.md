@@ -21,23 +21,28 @@ Headless Raspberry Pi API for controlling the race gate, reading finish sensors,
 2. Place the image (`.img` or `.img.xz`) in the `pi/os/` directory
    - Keep the original filename (e.g., `2025-12-04-raspios-trixie-arm64-lite.img.xz`)
 
+3. Create your configuration file:
+   ```bash
+   cd pi
+   cp env.template .env
+   # Edit .env with your WiFi credentials
+   ```
+
 ### Flash & Configure SD Card
 
 ```bash
-# List available disks to find your SD card
-diskutil list
-
-# Flash and configure everything (replace /dev/disk4 with your SD card)
 cd pi/setup
 chmod +x prepare_sd.sh
-./prepare_sd.sh /dev/disk4 "YourWiFiSSID" "YourWiFiPassword"
+./prepare_sd.sh
 ```
 
-That's it! The script will:
+The script will:
+- Prompt you to insert the SD card
+- Scan and list available disks for you to choose
 - Flash the OS image
 - Enable SSH
-- Configure WiFi
-- Set up the `pi` user (password: `pinewood2024`)
+- Configure **both** WiFi networks (dev + venue)
+- Set up the `pi` user
 - Copy all track controller code
 - Configure auto-setup on first boot
 
@@ -185,9 +190,11 @@ pi/
 │   ├── storage.py          # JSON file history
 │   └── discovery.py        # Zeroconf/mDNS
 ├── setup/
-│   ├── prepare_sd.sh       # One-command SD card setup
+│   ├── prepare_sd.sh       # Interactive SD card setup
 │   ├── track-api.service   # systemd unit file
 │   └── first_boot.sh       # Manual setup (alternative)
+├── env.template            # WiFi config template
+├── .env                    # Your WiFi config (git-ignored)
 ├── Dockerfile.dev          # Local development container
 ├── requirements.txt        # Python dependencies
 └── README.md               # This file

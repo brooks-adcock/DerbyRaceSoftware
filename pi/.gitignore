@@ -1,0 +1,10 @@
+# Environment config (contains WiFi passwords)
+.env
+
+# Python
+__pycache__/
+*.pyc
+venv/
+
+# Runtime data
+heat_history.json
