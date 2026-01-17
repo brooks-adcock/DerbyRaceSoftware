@@ -100,6 +100,13 @@ export async function POST(request: NextRequest) {
       }
       
       race.heats = new_heats;
+      race.current_heat_id = new_heats.length > 0 ? 1 : null;
+      await Storage.saveRace(race);
+      return NextResponse.json(race);
+    }
+
+    if (body.action === 'update_current_heat') {
+      race.current_heat_id = body.heat_id;
       await Storage.saveRace(race);
       return NextResponse.json(race);
     }
@@ -117,7 +124,9 @@ export async function POST(request: NextRequest) {
           const car = cars.find(c => c.id === car_id);
           if (car) {
             const is_included = car.registration_status !== 'COURTESY';
-            car.track_times.push({ time, is_included });
+            // Remove existing time for this heat if any
+            car.track_times = car.track_times.filter(t => t.heat_id !== heat_id);
+            car.track_times.push({ heat_id, track_number: lane_index + 1, time, is_included });
             
             const included_times = car.track_times.filter(t => t.is_included).map(t => t.time);
             if (included_times.length > 0) {
@@ -128,6 +137,44 @@ export async function POST(request: NextRequest) {
             await Storage.saveCars(cars);
           }
         }
+      }
+      return NextResponse.json(race);
+    }
+
+    if (body.action === 'trigger_gate') {
+      const { heat_id } = body;
+      const heat = heat_id 
+        ? race.heats.find(h => h.id === heat_id)
+        : race.heats.find((h: Heat) => h.lanes.some(l => l.time === null && l.car_id !== null));
+
+      if (heat) {
+        race.countdown_end = Date.now() + 3500; // 3 seconds + 500ms buffer
+        
+        const cars = await Storage.getCars();
+        
+        for (let i = 0; i < heat.lanes.length; i++) {
+          const lane = heat.lanes[i];
+          if (lane.car_id) {
+            const random_time = Math.round((8 + Math.random() * 3) * 1000) / 1000;
+            lane.time = random_time;
+            
+            const car = cars.find(c => c.id === lane.car_id);
+            if (car) {
+              const is_included = car.registration_status !== 'COURTESY';
+              // Remove existing time for this heat if any
+              car.track_times = car.track_times.filter(t => t.heat_id !== heat.id);
+              car.track_times.push({ heat_id: heat.id, track_number: i + 1, time: random_time, is_included });
+              
+              const included_times = car.track_times.filter(t => t.is_included).map(t => t.time);
+              car.average_time = included_times.length > 0 
+                ? included_times.reduce((a, b) => a + b, 0) / included_times.length 
+                : undefined;
+            }
+          }
+        }
+        
+        await Storage.saveCars(cars);
+        await Storage.saveRace(race);
       }
       return NextResponse.json(race);
     }

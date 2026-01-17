@@ -66,6 +66,8 @@ export interface Race {
   state: RaceState;
   heats: Heat[];
   manual_runs: Heat[];
+  countdown_end: number | null;
+  current_heat_id: number | null;
 }
 
 async function ensureDataDir() {
@@ -117,6 +119,8 @@ export const Storage = {
       state: 'REGISTRATION',
       heats: [],
       manual_runs: [],
+      countdown_end: null,
+      current_heat_id: null,
     });
   },
 

@@ -6,7 +6,7 @@ import { Heading, Subheading } from '@/components/text'
 import { Button } from '@/components/button'
 import { Car, RaceSettings } from '@/lib/storage'
 
-const SCOUT_LEVELS = ['Lion', 'Tiger', 'Wolf', 'Bear', 'Webelos', 'AOL', 'Family']
+const SCOUT_LEVELS = ['Lion', 'Tiger', 'Wolf', 'Bear', 'Webelos', 'AOL', 'Family', 'Overall']
 
 export default function ResultsPage() {
   const [cars, set_cars] = useState<Car[]>([])
@@ -42,15 +42,31 @@ export default function ResultsPage() {
     alert(`Presenting ${type} results for ${level}`)
   }
 
+  const handleStopPresenting = async () => {
+    if (!settings) return
+    const new_settings = {
+      ...settings,
+      presentation: {
+        ...settings.presentation,
+        is_visible: false
+      } as any
+    }
+    set_settings(new_settings)
+    await fetch('/api/settings', {
+      method: 'POST',
+      body: JSON.stringify(new_settings),
+    })
+  }
+
   const getSpeedResults = (level: string) => {
     return cars
-      .filter(c => c.scout_level === level && c.average_time)
+      .filter(c => (level === 'Overall' || c.scout_level === level) && c.average_time)
       .sort((a, b) => (a.average_time || 0) - (b.average_time || 0))
   }
 
   const getBeautyResults = (level: string) => {
     return cars
-      .filter(c => c.scout_level === level && c.is_beauty && c.beauty_scores.length > 0)
+      .filter(c => (level === 'Overall' || c.scout_level === level) && c.is_beauty && c.beauty_scores.length > 0)
       .sort((a, b) => {
         const a_avg = a.beauty_scores.reduce((sum, s) => sum + s, 0) / a.beauty_scores.length
         const b_avg = b.beauty_scores.reduce((sum, s) => sum + s, 0) / b.beauty_scores.length
@@ -62,8 +78,20 @@ export default function ResultsPage() {
 
   return (
     <Container className="py-24">
-      <Subheading>Final Standings</Subheading>
-      <Heading className="mt-2">Race Results</Heading>
+      <div className="flex items-end justify-between">
+        <div>
+          <Subheading>Final Standings</Subheading>
+          <Heading className="mt-2">Race Results</Heading>
+        </div>
+        {settings?.presentation?.is_visible && (
+          <div className="flex items-center gap-4 rounded-xl bg-blue-50 px-4 py-2 ring-1 ring-blue-600/20">
+            <div className="text-sm font-bold text-blue-600 uppercase">
+              Presenting: {settings.presentation.scout_level} {settings.presentation.type}
+            </div>
+            <Button variant="outline" onClick={handleStopPresenting}>Stop Presenting</Button>
+          </div>
+        )}
+      </div>
 
       <div className="mt-12 space-y-16">
         <section>
