@@ -1,0 +1,5 @@
+# Place Raspberry Pi OS Lite image here
+# Download from: https://www.raspberrypi.com/software/operating-systems/
+# Recommended: Raspberry Pi OS Lite (64-bit)
+# 
+# Keep the original filename - the script auto-detects .img and .img.xz files

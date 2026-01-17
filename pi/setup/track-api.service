@@ -1,0 +1,42 @@
+[Unit]
+Description=Pinewood Derby Track Controller API
+Documentation=https://github.com/your-org/pinewood-derby
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/track-api
+
+# Environment configuration
+Environment="NUM_TRACKS=4"
+Environment="API_PORT=8000"
+Environment="SERVO_PIN=18"
+Environment="SENSOR_PIN_1=17"
+Environment="SENSOR_PIN_2=27"
+Environment="SENSOR_PIN_3=22"
+Environment="SENSOR_PIN_4=23"
+
+# Run the application
+ExecStart=/home/pi/track-api/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000
+
+# Restart policy for stability
+Restart=always
+RestartSec=3
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=track-api
+
+# Security hardening (optional, can be commented out if causing issues)
+NoNewPrivileges=false
+ProtectSystem=false
+ProtectHome=false
+
+[Install]
+WantedBy=multi-user.target
