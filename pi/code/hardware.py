@@ -16,6 +16,7 @@ Race sequence:
 """
 
 import os
+import json
 import time
 import asyncio
 import random
@@ -23,10 +24,13 @@ from typing import List, Optional, Callable, Dict
 from datetime import datetime
 from models import HeatSetup, LaneResult, HeatResult
 
-# Constants - Gate positions
-SERVO_UP_ANGLE = int(os.environ.get("SERVO_UP_ANGLE", 90))    # Gate holding cars
-SERVO_DOWN_ANGLE = int(os.environ.get("SERVO_DOWN_ANGLE", 0))  # Gate released
-SERVO_CHANNEL = int(os.environ.get("SERVO_CHANNEL", 0))        # PCA9685 channel
+# Config file for persistent calibration
+CONFIG_FILE = "servo_config.json"
+
+# Default servo positions (can be overridden via API or env)
+DEFAULT_SERVO_UP_ANGLE = int(os.environ.get("SERVO_UP_ANGLE", 90))
+DEFAULT_SERVO_DOWN_ANGLE = int(os.environ.get("SERVO_DOWN_ANGLE", 0))
+SERVO_CHANNEL = int(os.environ.get("SERVO_CHANNEL", 0))
 
 # Timing
 SENSOR_TIMEOUT_SEC = 30.0  # Max time to wait for all cars to finish
@@ -46,6 +50,33 @@ class HardwareInterface:
         self.is_gate_down = False
         self.current_heat: Optional[HeatSetup] = None
         self._result_callback: Optional[Callable] = None
+        
+        # Load calibration from config file or use defaults
+        self.servo_up_angle = DEFAULT_SERVO_UP_ANGLE
+        self.servo_down_angle = DEFAULT_SERVO_DOWN_ANGLE
+        self._loadCalibration()
+    
+    def _loadCalibration(self):
+        """Load servo calibration from config file."""
+        if os.path.exists(CONFIG_FILE):
+            try:
+                with open(CONFIG_FILE, "r") as f:
+                    config = json.load(f)
+                    self.servo_up_angle = config.get("up_angle", DEFAULT_SERVO_UP_ANGLE)
+                    self.servo_down_angle = config.get("down_angle", DEFAULT_SERVO_DOWN_ANGLE)
+                    print(f"Loaded calibration: UP={self.servo_up_angle}°, DOWN={self.servo_down_angle}°")
+            except (json.JSONDecodeError, IOError) as e:
+                print(f"Failed to load calibration: {e}, using defaults")
+    
+    def _saveCalibration(self):
+        """Save servo calibration to config file."""
+        config = {
+            "up_angle": self.servo_up_angle,
+            "down_angle": self.servo_down_angle,
+        }
+        with open(CONFIG_FILE, "w") as f:
+            json.dump(config, f, indent=2)
+        print(f"Saved calibration: UP={self.servo_up_angle}°, DOWN={self.servo_down_angle}°")
     
     def setResultCallback(self, callback: Callable):
         """Set callback function to be called when race results are ready."""
@@ -63,6 +94,24 @@ class HardwareInterface:
         """Drop gate to release cars (DOWN position)."""
         self.setGate(is_down=True)
     
+    def testServoAngle(self, angle: int):
+        """Move servo to a specific angle for calibration testing."""
+        raise NotImplementedError
+    
+    def getCalibration(self) -> dict:
+        """Get current servo calibration."""
+        return {
+            "up_angle": self.servo_up_angle,
+            "down_angle": self.servo_down_angle,
+        }
+    
+    def setCalibration(self, up_angle: int, down_angle: int):
+        """Set and persist servo calibration."""
+        self.servo_up_angle = max(0, min(180, up_angle))
+        self.servo_down_angle = max(0, min(180, down_angle))
+        self._saveCalibration()
+        return self.getCalibration()
+    
     def prepareRace(self, setup: HeatSetup):
         """Prepare for a race with given configuration."""
         self.current_heat = setup
@@ -79,6 +128,7 @@ class HardwareInterface:
             "num_tracks": self.num_tracks,
             "is_gate_down": self.is_gate_down,
             "current_heat_id": self.current_heat.heat_id if self.current_heat else None,
+            "calibration": self.getCalibration(),
         }
 
 
@@ -87,8 +137,14 @@ class MockHardware(HardwareInterface):
     
     def setGate(self, is_down: bool):
         self.is_gate_down = is_down
+        angle = self.servo_down_angle if is_down else self.servo_up_angle
         position = "DOWN (released)" if is_down else "UP (holding)"
-        print(f"[MOCK] Gate moved to {position}")
+        print(f"[MOCK] Gate moved to {position} (angle={angle}°)")
+    
+    def testServoAngle(self, angle: int):
+        """Test servo at specific angle."""
+        angle = max(0, min(180, angle))
+        print(f"[MOCK] Servo moved to {angle}°")
     
     async def runRace(self) -> HeatResult:
         """Simulate a race with random finish times."""
@@ -226,12 +282,18 @@ class RealHardware(HardwareInterface):
         self.servo.angle = angle
     
     def setGate(self, is_down: bool):
-        """Move the gate servo."""
-        angle = SERVO_DOWN_ANGLE if is_down else SERVO_UP_ANGLE
+        """Move the gate servo using calibrated angles."""
+        angle = self.servo_down_angle if is_down else self.servo_up_angle
         self._setServoAngle(angle)
         self.is_gate_down = is_down
         state = "DOWN (released)" if is_down else "UP (holding)"
         print(f"Gate moved to {state} (angle={angle}°)")
+    
+    def testServoAngle(self, angle: int):
+        """Move servo to a specific angle for calibration testing."""
+        angle = max(0, min(180, angle))
+        self._setServoAngle(angle)
+        print(f"Servo test: moved to {angle}°")
     
     async def runRace(self) -> HeatResult:
         """Run a race, monitoring sensors for finish times.

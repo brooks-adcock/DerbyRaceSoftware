@@ -52,16 +52,34 @@
 | Red (V+) | V+ row |
 | Yellow (Signal) | **Channel 0** PWM |
 
-#### Gate Positions
+#### Gate Positions (Calibrate via API)
 
-| Position | Angle | Pulse Width | Description |
-|----------|-------|-------------|-------------|
-| **UP** (holding) | ~90° | 1500µs | Cars held at start |
-| **DOWN** (released) | ~0° | 900µs | Gate drops, cars roll |
+The actual angles depend on your track geometry. Use the API to calibrate:
+
+| Position | Default | Description |
+|----------|---------|-------------|
+| **UP** (holding) | 90° | Cars held at start |
+| **DOWN** (released) | 0° | Gate drops, cars roll |
+
+**Calibration API:**
+```bash
+# Test a specific angle
+curl -X POST http://track-controller.local:8000/servo/test \
+  -H "Content-Type: application/json" \
+  -d '{"angle": 45}'
+
+# Once you find the right angles, save them:
+curl -X POST http://track-controller.local:8000/servo/calibration \
+  -H "Content-Type: application/json" \
+  -d '{"up_angle": 85, "down_angle": 15}'
+
+# Check current calibration
+curl http://track-controller.local:8000/servo/calibration
+```
 
 **Race Sequence:**
-1. Gate starts in **UP** position (servo at 90°)
-2. On "GO" command, gate moves to **DOWN** position
+1. Gate starts in **UP** position (servo at calibrated up_angle)
+2. On "GO" command, gate moves to **DOWN** position (calibrated down_angle)
 3. **START TIME is recorded** when gate drops
 4. Cars race down track...
 

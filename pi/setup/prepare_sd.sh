@@ -217,27 +217,52 @@ echo "Step 4: Enabling SSH..."
 touch "$BOOT_VOLUME/ssh"
 
 echo ""
-echo "Step 5: Configuring WiFi (both networks)..."
-cat > "$BOOT_VOLUME/wpa_supplicant.conf" << EOF
-country=US
-ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
-update_config=1
+echo "Step 5: Configuring WiFi (NetworkManager for Trixie)..."
+# Create NetworkManager connection files for Trixie
+mkdir -p "$BOOT_VOLUME/track-api/nm-connections"
 
-# Development network (priority 1 - preferred when available)
-network={
-    ssid="$DEV_WIFI_SSID"
-    psk="$DEV_WIFI_PASSWORD"
-    key_mgmt=WPA-PSK
-    priority=1
-}
+cat > "$BOOT_VOLUME/track-api/nm-connections/dev-wifi.nmconnection" << EOF
+[connection]
+id=$DEV_WIFI_SSID
+type=wifi
+autoconnect=true
+autoconnect-priority=100
 
-# Venue network (priority 2 - fallback)
-network={
-    ssid="$VENUE_WIFI_SSID"
-    psk="$VENUE_WIFI_PASSWORD"
-    key_mgmt=WPA-PSK
-    priority=2
-}
+[wifi]
+mode=infrastructure
+ssid=$DEV_WIFI_SSID
+
+[wifi-security]
+key-mgmt=wpa-psk
+psk=$DEV_WIFI_PASSWORD
+
+[ipv4]
+method=auto
+
+[ipv6]
+method=auto
+EOF
+
+cat > "$BOOT_VOLUME/track-api/nm-connections/venue-wifi.nmconnection" << EOF
+[connection]
+id=$VENUE_WIFI_SSID
+type=wifi
+autoconnect=true
+autoconnect-priority=50
+
+[wifi]
+mode=infrastructure
+ssid=$VENUE_WIFI_SSID
+
+[wifi-security]
+key-mgmt=wpa-psk
+psk=$VENUE_WIFI_PASSWORD
+
+[ipv4]
+method=auto
+
+[ipv6]
+method=auto
 EOF
 
 echo ""
@@ -262,20 +287,58 @@ exec > >(tee -a $LOG) 2>&1
 
 echo "$(date): Starting track-api setup..."
 
-# Wait for network
-sleep 10
+# Set locale and keyboard to US
+echo "$(date): Setting locale and keyboard to US..."
+raspi-config nonint do_configure_keyboard us
+raspi-config nonint do_change_locale en_US.UTF-8
+
+# Enable WiFi (set country code and unblock)
+echo "$(date): Enabling WiFi..."
+raspi-config nonint do_wifi_country US
+rfkill unblock wifi
+
+# Find boot partition location
+BOOT_DIR="/boot/firmware"
+[ -d "/boot/track-api" ] && BOOT_DIR="/boot"
+
+# First: Install NetworkManager WiFi connections
+echo "$(date): Configuring WiFi connections..."
+if [ -d "$BOOT_DIR/track-api/nm-connections" ]; then
+    cp "$BOOT_DIR/track-api/nm-connections/"*.nmconnection /etc/NetworkManager/system-connections/
+    chmod 600 /etc/NetworkManager/system-connections/*.nmconnection
+    nmcli connection reload
+    echo "$(date): WiFi configured, waiting for connection..."
+fi
+
+# Wait for network (up to 60 seconds)
+for i in {1..30}; do
+    if ping -c1 -W2 8.8.8.8 &>/dev/null; then
+        echo "$(date): Network connected!"
+        break
+    fi
+    echo "$(date): Waiting for network... ($i/30)"
+    sleep 2
+done
 
 # Install dependencies
 apt-get update
-apt-get install -y python3-pip python3-venv python3-dev i2c-tools
+apt-get install -y python3-pip python3-venv python3-dev i2c-tools avahi-daemon
+
+# Ensure avahi (mDNS) is running for .local resolution
+systemctl enable avahi-daemon
+systemctl start avahi-daemon
+
+# Ensure SSH is enabled
+systemctl enable ssh
+systemctl start ssh
+
+# Clear any firewall rules that might block incoming
+nft flush ruleset 2>/dev/null || true
 
 # Enable I2C interface for PCA9685 servo driver
 raspi-config nonint do_i2c 0
 
 # Move code from boot partition to home directory
-BOOT_DIR="/boot/firmware"
-[ -d "/boot/track-api" ] && BOOT_DIR="/boot"
-
 mkdir -p /home/pi/track-api
 cp -r "$BOOT_DIR/track-api/"* /home/pi/track-api/
 chown -R pi:pi /home/pi/track-api
@@ -298,46 +361,98 @@ systemctl daemon-reload
 systemctl enable track-api
 systemctl start track-api
 
-# Set hostname
+# Set hostname and update /etc/hosts
 hostnamectl set-hostname track-controller
+grep -q "track-controller" /etc/hosts || echo "127.0.0.1 track-controller" >> /etc/hosts
 
-# Remove setup script from boot partition
+# Clean up boot partition
 rm -rf "$BOOT_DIR/track-api"
-
-# Remove from rc.local
-sed -i '/setup_on_boot/d' /etc/rc.local
 
 echo "$(date): Track-api setup complete!"
 SETUP_SCRIPT
 chmod +x "$BOOT_VOLUME/track-api/setup_on_boot.sh"
 
 echo ""
-echo "Step 9: Configuring first-boot hook..."
-cat > "$BOOT_VOLUME/track-api/track-api-setup.service" << EOF
+echo "Step 9: Configuring automated first-boot..."
+
+# Create systemd service for track-api setup
+cat > "$BOOT_VOLUME/track-api/track-api-setup.service" << 'EOF'
 [Unit]
 Description=Track API First Boot Setup
 After=network-online.target
 Wants=network-online.target
-ConditionPathExists=/boot/firmware/track-api/setup_on_boot.sh
 
 [Service]
 Type=oneshot
-ExecStart=/boot/firmware/track-api/setup_on_boot.sh
+ExecStart=/home/pi/track-api/setup_on_boot.sh
 RemainAfterExit=yes
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
+# Create firstrun script that runs via cmdline.txt
 cat > "$BOOT_VOLUME/firstrun.sh" << 'FIRSTRUN'
 #!/bin/bash
-# Enable the setup service on first boot
-cp /boot/firmware/track-api/track-api-setup.service /etc/systemd/system/ 2>/dev/null || \
-cp /boot/track-api/track-api-setup.service /etc/systemd/system/
+exec >> /var/log/firstrun.log 2>&1
+echo "$(date): First boot script starting..."
+
+# Find boot partition
+BOOT=/boot/firmware
+[ ! -d "$BOOT/track-api" ] && BOOT=/boot
+
+# CRITICAL: Enable WiFi first (set country and unblock)
+echo "$(date): Enabling WiFi (country=US)..."
+raspi-config nonint do_wifi_country US
+rfkill unblock wifi
+sleep 2
+
+# Install NetworkManager WiFi connections
+echo "$(date): Installing WiFi connections..."
+if [ -d "$BOOT/track-api/nm-connections" ]; then
+    cp "$BOOT/track-api/nm-connections/"*.nmconnection /etc/NetworkManager/system-connections/
+    chmod 600 /etc/NetworkManager/system-connections/*.nmconnection
+    nmcli connection reload
+    sleep 3
+    # Try to connect
+    nmcli device wifi rescan
+    sleep 2
+    nmcli --wait 30 connection up "$(ls $BOOT/track-api/nm-connections/ | head -1 | sed 's/.nmconnection//')" || true
+fi
+
+# Copy code to home directory
+echo "$(date): Copying track-api to home..."
+mkdir -p /home/pi/track-api
+cp -r "$BOOT/track-api/"* /home/pi/track-api/
+chown -R pi:pi /home/pi/track-api
+chmod +x /home/pi/track-api/setup_on_boot.sh
+
+# Install and start the setup service
+echo "$(date): Installing track-api-setup service..."
+cp /home/pi/track-api/track-api-setup.service /etc/systemd/system/
 systemctl daemon-reload
 systemctl enable track-api-setup
+systemctl start track-api-setup &
+
+# Clean up cmdline.txt
+echo "$(date): Cleaning up cmdline.txt..."
+sed -i 's| systemd.run=[^ ]*||g; s| systemd.run_success_action=[^ ]*||g' $BOOT/cmdline.txt
+
+# Remove firstrun script
+rm -f $BOOT/firstrun.sh
+
+echo "$(date): First boot script complete! Rebooting..."
+sleep 2
+reboot
 FIRSTRUN
 chmod +x "$BOOT_VOLUME/firstrun.sh"
+
+# Modify cmdline.txt to run firstrun.sh on boot
+if [ -f "$BOOT_VOLUME/cmdline.txt" ]; then
+    CMDLINE=$(cat "$BOOT_VOLUME/cmdline.txt" | tr '\n' ' ' | sed 's/ quiet//g; s/ splash//g')
+    echo "${CMDLINE} systemd.run=/boot/firmware/firstrun.sh systemd.run_success_action=none" > "$BOOT_VOLUME/cmdline.txt"
+    echo "Added systemd.run to cmdline.txt"
+fi
 
 # ============================================
 # Done
@@ -355,16 +470,16 @@ echo "==========================================${NC}"
 echo ""
 echo "Next steps:"
 echo "  1. Insert SD card into Raspberry Pi"
-echo "  2. Connect power"
-echo "  3. Wait ~3-5 minutes for first boot setup"
-echo "  4. Access the API at: http://$PI_HOSTNAME.local:8000/health"
+echo "  2. Connect power (HDMI optional for monitoring)"
+echo "  3. Wait ~5-10 minutes for automated setup"
+echo "  4. Access API: http://$PI_HOSTNAME.local:8000/health"
 echo ""
-echo "Credentials:"
-echo "  SSH: ssh $PI_USER@$PI_HOSTNAME.local"
-echo "  Password: $PI_PASSWORD"
+echo "Debug commands (if needed):"
+echo "  SSH: ssh $PI_USER@$PI_HOSTNAME.local (pw: $PI_PASSWORD)"
+echo "  Logs: cat /var/log/firstrun.log"
+echo "        cat /var/log/track-api-setup.log"
+echo "        sudo journalctl -u track-api -f"
 echo ""
-echo "Configured WiFi networks:"
-echo "  - $DEV_WIFI_SSID (dev - priority)"
-echo "  - $VENUE_WIFI_SSID (venue - fallback)"
+echo "Configured WiFi: $DEV_WIFI_SSID (priority), $VENUE_WIFI_SSID (fallback)"
 echo ""
 echo -e "${YELLOW}Remember to change the default password!${NC}"

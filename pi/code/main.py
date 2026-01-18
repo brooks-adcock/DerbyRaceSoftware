@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from typing import List, Optional
 
-from models import HeatSetup, HeatResult, GatePosition, HealthResponse
+from models import HeatSetup, HeatResult, GatePosition, HealthResponse, ServoCalibration, ServoTestRequest
 from storage import HistoryManager
 from hardware import MakeHardware
 from discovery import registerService, unregisterService
@@ -78,6 +78,38 @@ def setGatePosition(position: GatePosition):
     """Set gate position (up or down)."""
     hardware.setGate(position.is_down)
     return {"is_gate_down": hardware.is_gate_down}
+
+
+# ----- Servo Calibration -----
+
+@app.get("/servo/calibration")
+def getServoCalibration():
+    """Get current servo angle calibration."""
+    return hardware.getCalibration()
+
+
+@app.post("/servo/calibration")
+def setServoCalibration(calibration: ServoCalibration):
+    """
+    Set servo angle calibration.
+    
+    Angles depend on your track geometry:
+    - up_angle: Angle when gate holds cars (before race)
+    - down_angle: Angle when gate releases cars (race start)
+    """
+    return hardware.setCalibration(calibration.up_angle, calibration.down_angle)
+
+
+@app.post("/servo/test")
+def testServoAngle(request: ServoTestRequest):
+    """
+    Move servo to a specific angle for testing/calibration.
+    
+    Use this to find the correct up_angle and down_angle for your track.
+    Angle range: 0-180 degrees.
+    """
+    hardware.testServoAngle(request.angle)
+    return {"angle": request.angle, "message": f"Servo moved to {request.angle}°"}
 
 
 # ----- Race Execution -----

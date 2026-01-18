@@ -62,6 +62,9 @@ The script will:
 | GET | `/health` | Health check, returns track count and gate status |
 | GET | `/gate` | Get current gate position |
 | POST | `/gate` | Set gate up/down (`{"is_down": true}`) |
+| GET | `/servo/calibration` | Get current servo angle calibration |
+| POST | `/servo/calibration` | Set servo angles (`{"up_angle": 90, "down_angle": 0}`) |
+| POST | `/servo/test` | Test servo at specific angle (`{"angle": 45}`) |
 | POST | `/race/run` | Start a heat (`{"heat_id": "...", "occupied_lanes": [1,2,3]}`) |
 | GET | `/history` | Get past heat results (`?limit=100`) |
 | GET | `/history/{heat_id}` | Get specific heat result |

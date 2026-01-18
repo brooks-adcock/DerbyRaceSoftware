@@ -8,3 +8,4 @@ venv/
 
 # Runtime data
 heat_history.json
+servo_config.json

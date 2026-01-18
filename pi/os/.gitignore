@@ -1,4 +1,6 @@
 # Ignore the actual OS image (it's huge)
 *.img
+*.img.xz
+*.img.gz
 *.iso
 *.zip

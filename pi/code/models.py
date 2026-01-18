@@ -39,3 +39,14 @@ class HealthResponse(BaseModel):
     num_tracks: int
     is_gate_down: bool
     current_heat_id: Optional[str] = None
+
+
+class ServoCalibration(BaseModel):
+    """Servo angle calibration settings."""
+    up_angle: int      # Angle when gate is UP (holding cars)
+    down_angle: int    # Angle when gate is DOWN (released)
+
+
+class ServoTestRequest(BaseModel):
+    """Request to test servo at a specific angle."""
+    angle: int  # 0-180
