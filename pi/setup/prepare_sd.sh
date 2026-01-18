@@ -53,8 +53,9 @@ fi
 # Defaults
 PI_HOSTNAME="${PI_HOSTNAME:-track-controller}"
 PI_USER="${PI_USER:-pi}"
-PI_PASSWORD="${PI_PASSWORD:-pinewood2024}"
+PI_PASSWORD="${PI_PASSWORD:-pi}"
 NUM_TRACKS="${NUM_TRACKS:-4}"
+KEYBOARD_LAYOUT="${KEYBOARD_LAYOUT:-us}"
 
 # ============================================
 # Find OS Image
@@ -150,6 +151,7 @@ echo ""
 echo "Pi Hostname:  $PI_HOSTNAME"
 echo "Pi User:      $PI_USER"
 echo "Tracks:       $NUM_TRACKS"
+echo "Keyboard:     $KEYBOARD_LAYOUT"
 echo ""
 echo "WiFi Networks:"
 echo "  1. Dev:   $DEV_WIFI_SSID"
@@ -277,6 +279,9 @@ cp -r "$PI_DIR/code/"* "$BOOT_VOLUME/track-api/"
 cp "$PI_DIR/requirements.txt" "$BOOT_VOLUME/track-api/"
 cp "$SCRIPT_DIR/track-api.service" "$BOOT_VOLUME/track-api/"
 
+# Write config file with keyboard layout
+echo "KEYBOARD_LAYOUT=$KEYBOARD_LAYOUT" > "$BOOT_VOLUME/track-api/setup.conf"
+
 echo ""
 echo "Step 8: Creating first-boot setup script..."
 cat > "$BOOT_VOLUME/track-api/setup_on_boot.sh" << 'SETUP_SCRIPT'
@@ -287,19 +292,37 @@ exec > >(tee -a $LOG) 2>&1
 
 echo "$(date): Starting track-api setup..."
 
-# Set locale and keyboard to US
-echo "$(date): Setting locale and keyboard to US..."
-raspi-config nonint do_configure_keyboard us
+# Find boot partition location first (needed to load config)
+BOOT_DIR="/boot/firmware"
+[ -d "/boot/track-api" ] && BOOT_DIR="/boot"
+
+# Load config
+source "$BOOT_DIR/track-api/setup.conf" 2>/dev/null || true
+KEYBOARD_LAYOUT="${KEYBOARD_LAYOUT:-us}"
+
+# Set locale
+echo "$(date): Setting locale..."
 raspi-config nonint do_change_locale en_US.UTF-8
+
+# Set keyboard layout
+echo "$(date): Setting keyboard layout ($KEYBOARD_LAYOUT)..."
+if [ "$KEYBOARD_LAYOUT" = "dvorak" ]; then
+    sed -i 's/XKBLAYOUT=.*/XKBLAYOUT="us"/' /etc/default/keyboard
+    sed -i 's/XKBVARIANT=.*/XKBVARIANT="dvorak"/' /etc/default/keyboard
+    # If XKBVARIANT line doesn't exist, add it
+    grep -q "XKBVARIANT" /etc/default/keyboard || echo 'XKBVARIANT="dvorak"' >> /etc/default/keyboard
+    dpkg-reconfigure -f noninteractive keyboard-configuration
+    setupcon --force || true
+    echo "$(date): Keyboard set to US Dvorak"
+else
+    raspi-config nonint do_configure_keyboard us
+    echo "$(date): Keyboard set to US QWERTY"
+fi
 
 # Enable WiFi (set country code and unblock)
 echo "$(date): Enabling WiFi..."
 raspi-config nonint do_wifi_country US
 rfkill unblock wifi
-
-# Find boot partition location
-BOOT_DIR="/boot/firmware"
-[ -d "/boot/track-api" ] && BOOT_DIR="/boot"
 
 # First: Install NetworkManager WiFi connections
 echo "$(date): Configuring WiFi connections..."
