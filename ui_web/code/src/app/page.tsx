@@ -57,7 +57,7 @@ export default function Home() {
           <Subheading>Entrant</Subheading>
           <Heading className="mt-2">My Registrations</Heading>
         </div>
-        {race_state === 'REGISTRATION' && (
+        {race_state === 'REGISTRATION' && cars.length > 0 && (
           <Button href="/register">Register Another Car</Button>
         )}
       </div>

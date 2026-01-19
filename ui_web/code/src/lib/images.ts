@@ -38,6 +38,7 @@ export async function processAndSavePhoto(file_buffer: Buffer): Promise<string> 
   const file_path = path.join(PHOTOS_DIR, file_name);
 
   await sharp(processed_buffer)
+    .rotate() // Auto-orient based on EXIF data
     .resize(800, 800, { fit: 'cover', position: 'center' })
     .jpeg({ quality: 80 })
     .toFile(file_path);
