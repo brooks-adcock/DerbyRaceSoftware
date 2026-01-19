@@ -1,5 +1,0 @@
-tornado>=6.4
-google-genai>=1.0
-pydantic>=2.0
-psycopg[binary]>=3.2
-
