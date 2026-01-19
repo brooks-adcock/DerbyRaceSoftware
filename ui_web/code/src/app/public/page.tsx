@@ -30,10 +30,10 @@ export default function PublicPage() {
       set_cars(cars_map)
       set_race(race_res)
       set_settings(settings_res)
-      set_local_ip(race_res.local_ip)
-      
-      if (race_res.state === 'REGISTRATION' && !qr_code_url) {
-        const url = `http://${race_res.local_ip}/register`
+      // Regenerate QR if IP changed
+      if (race_res.state === 'REGISTRATION' && race_res.local_ip !== local_ip) {
+        set_local_ip(race_res.local_ip)
+        const url = `http://${race_res.local_ip}/`
         const qr = await QRCode.toDataURL(url, { 
           width: 800, 
           margin: 1,
@@ -43,6 +43,8 @@ export default function PublicPage() {
           }
         })
         set_qr_code_url(qr)
+      } else if (!local_ip) {
+        set_local_ip(race_res.local_ip)
       }
 
       set_is_loading(false)
@@ -55,7 +57,7 @@ export default function PublicPage() {
     fetchData()
     const interval = setInterval(fetchData, 500)
     return () => clearInterval(interval)
-  }, [qr_code_url])
+  }, [])
 
   useEffect(() => {
     if (race?.state === 'REGISTRATION') {

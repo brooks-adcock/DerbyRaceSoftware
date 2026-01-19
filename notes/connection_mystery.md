@@ -12,7 +12,7 @@
 | Pi Hostname | track-controller |
 | Router | Netgear Nighthawk |
 | Upstream | Google Fiber router (bridge mode) |
-| WiFi SSID | Shoccoree (both Mac and Pi on same SSID) |
+| WiFi SSID | Shoccoree 2.4GHz (both Mac and Pi confirmed on same SSID) |
 
 ## What Works ✅
 
@@ -219,6 +219,30 @@ From `prepare_sd.sh`, the first-boot script:
 3. **Disable rp_filter**: `sudo sysctl -w net.ipv4.conf.all.rp_filter=0`
 4. **Disable WiFi power save**: `sudo iw wlan0 set power_save off`
 5. **Try ethernet**: Bypass all WiFi issues
+
+## Debug Session (Jan 19, 2026)
+
+| Test | Result |
+|------|--------|
+| firewalld | Not installed ✅ ruled out |
+| rp_filter | Disabled (was 2) - still fails ✅ ruled out |
+| WiFi power_save | Disabled (was on) - still fails ✅ ruled out |
+| Netmask | /24 correct ✅ ruled out |
+| SSH localhost | nc succeeded ✅ SSH daemon working |
+| SSH own wlan0 IP | nc 192.168.1.106:22 succeeded ✅ |
+| Ethernet test | Pi at .35 via cat5, Mac still "no route to host" ❌ |
+| Mac ARP for Pi | **(incomplete)** - Pi not responding to ARP! |
+| Static ARP bypass | Added static entry, still fails |
+| tcpdump on Mac | **No packets captured** - packets not leaving Mac |
+| Other Linux machine | Can ping Pi at .106 ✅ |
+| Chromebook SSH to Pi | Works ✅ |
+| Mac PF firewall | **ENABLED** with PIA VPN anchor rules |
+| Removed PIA + reboot | Still fails ❌ |
+| macOS version | **15.6.1 (Sequoia)** |
+
+**ACTUAL ROOT CAUSE: macOS Sequoia Local Network Permission!**
+
+Sequoia 15+ requires apps to have explicit "Local Network" permission to access LAN devices.
 
 ## TODO
 

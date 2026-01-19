@@ -1,13 +1,14 @@
 """Zeroconf/mDNS service discovery for automatic network detection."""
 
 import socket
-from zeroconf import ServiceInfo, Zeroconf
+from zeroconf import ServiceInfo
+from zeroconf.asyncio import AsyncZeroconf
 
 # Constants
 SERVICE_TYPE = "_track-api._tcp.local."
 SERVICE_NAME = "Pinewood Derby Track Controller._track-api._tcp.local."
 
-_zeroconf: Zeroconf = None
+_zeroconf: AsyncZeroconf = None
 _service_info: ServiceInfo = None
 
 
@@ -24,7 +25,7 @@ def getLocalIp() -> str:
         return "127.0.0.1"
 
 
-def registerService(num_tracks: int, port: int = 8000):
+async def registerService(num_tracks: int, port: int = 8000):
     """Register the track controller service for network discovery."""
     global _zeroconf, _service_info
     
@@ -42,16 +43,23 @@ def registerService(num_tracks: int, port: int = 8000):
         server="track-controller.local.",
     )
     
-    _zeroconf = Zeroconf()
-    _zeroconf.register_service(_service_info)
-    print(f"Registered mDNS service: {SERVICE_NAME} at {local_ip}:{port}")
+    try:
+        _zeroconf = AsyncZeroconf()
+        await _zeroconf.async_register_service(_service_info)
+        print(f"Registered mDNS service: {SERVICE_NAME} at {local_ip}:{port}")
+    except Exception as e:
+        print(f"Warning: mDNS registration failed (non-fatal): {e}")
+        _zeroconf = None
 
 
-def unregisterService():
+async def unregisterService():
     """Unregister the service on shutdown."""
     global _zeroconf, _service_info
     
     if _zeroconf and _service_info:
-        _zeroconf.unregister_service(_service_info)
-        _zeroconf.close()
-        print("Unregistered mDNS service")
+        try:
+            await _zeroconf.async_unregister_service(_service_info)
+            await _zeroconf.async_close()
+            print("Unregistered mDNS service")
+        except Exception as e:
+            print(f"Warning: mDNS unregister failed: {e}")

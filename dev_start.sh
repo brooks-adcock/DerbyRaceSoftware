@@ -11,6 +11,10 @@ if ! colima status &> /dev/null; then
     colima start
 fi
 
+# Auto-detect host IP for container access
+export HOST_IP=$(ipconfig getifaddr en0 2>/dev/null || hostname -I 2>/dev/null | awk '{print $1}' || echo "localhost")
+echo "🌐 Detected host IP: $HOST_IP"
+
 # Log separator
 echo "" >> "$LOG_FILE"
 echo "================================================================================" >> "$LOG_FILE"

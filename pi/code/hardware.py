@@ -4,7 +4,7 @@ Supports both real Raspberry Pi hardware and mock mode for local development.
 
 Hardware:
 - PCA9685 I2C PWM driver for servo control
-- Hitec HS-422 servo for gate mechanism
+- Hitec HS-5625MG servo for gate mechanism (digital, metal gear, high torque)
 - DFRobot SEN0503 IR break-beam sensors for finish line
 
 Race sequence:
@@ -28,7 +28,7 @@ from models import HeatSetup, LaneResult, HeatResult
 CONFIG_FILE = "servo_config.json"
 
 # Default servo positions (can be overridden via API or env)
-DEFAULT_SERVO_UP_ANGLE = int(os.environ.get("SERVO_UP_ANGLE", 90))
+DEFAULT_SERVO_UP_ANGLE = int(os.environ.get("SERVO_UP_ANGLE", 60))
 DEFAULT_SERVO_DOWN_ANGLE = int(os.environ.get("SERVO_DOWN_ANGLE", 0))
 SERVO_CHANNEL = int(os.environ.get("SERVO_CHANNEL", 0))
 
@@ -36,9 +36,11 @@ SERVO_CHANNEL = int(os.environ.get("SERVO_CHANNEL", 0))
 SENSOR_TIMEOUT_SEC = 30.0  # Max time to wait for all cars to finish
 GATE_SETTLE_MS = 50        # Time to wait after gate drop before timing starts
 
-# PCA9685 servo pulse widths (microseconds)
-SERVO_MIN_PULSE = 900   # 0 degrees (HS-422 spec)
-SERVO_MAX_PULSE = 2100  # 180 degrees (HS-422 spec)
+# PCA9685 servo pulse widths (microseconds) - configurable for different servos
+# HS-5625MG spec: 900-2100µs, neutral at 1500µs
+SERVO_MIN_PULSE = int(os.environ.get("SERVO_MIN_PULSE", 900))   # 0 degrees
+SERVO_MAX_PULSE = int(os.environ.get("SERVO_MAX_PULSE", 2100))  # max degrees
+SERVO_ACTUATION_RANGE = int(os.environ.get("SERVO_ACTUATION_RANGE", 120))  # actual travel
 SERVO_FREQ = 50         # 50Hz for standard servos
 
 
@@ -107,8 +109,9 @@ class HardwareInterface:
     
     def setCalibration(self, up_angle: int, down_angle: int):
         """Set and persist servo calibration."""
-        self.servo_up_angle = max(0, min(180, up_angle))
-        self.servo_down_angle = max(0, min(180, down_angle))
+        max_angle = int(os.environ.get("SERVO_ACTUATION_RANGE", 120))
+        self.servo_up_angle = max(0, min(max_angle, up_angle))
+        self.servo_down_angle = max(0, min(max_angle, down_angle))
         self._saveCalibration()
         return self.getCalibration()
     
@@ -143,7 +146,7 @@ class MockHardware(HardwareInterface):
     
     def testServoAngle(self, angle: int):
         """Test servo at specific angle."""
-        angle = max(0, min(180, angle))
+        angle = max(0, min(SERVO_ACTUATION_RANGE, angle))
         print(f"[MOCK] Servo moved to {angle}°")
     
     async def runRace(self) -> HeatResult:
@@ -239,6 +242,7 @@ class RealHardware(HardwareInterface):
                 self.pca.channels[SERVO_CHANNEL],
                 min_pulse=SERVO_MIN_PULSE,
                 max_pulse=SERVO_MAX_PULSE,
+                actuation_range=SERVO_ACTUATION_RANGE,
             )
             
             print(f"PCA9685 initialized: channel={SERVO_CHANNEL}, freq={SERVO_FREQ}Hz")
@@ -276,9 +280,9 @@ class RealHardware(HardwareInterface):
         self.raiseGate()
     
     def _setServoAngle(self, angle: int):
-        """Set servo to specific angle (0-180)."""
+        """Set servo to specific angle (0 to SERVO_ACTUATION_RANGE)."""
         # Clamp angle to valid range
-        angle = max(0, min(180, angle))
+        angle = max(0, min(SERVO_ACTUATION_RANGE, angle))
         self.servo.angle = angle
     
     def setGate(self, is_down: bool):
@@ -291,7 +295,7 @@ class RealHardware(HardwareInterface):
     
     def testServoAngle(self, angle: int):
         """Move servo to a specific angle for calibration testing."""
-        angle = max(0, min(180, angle))
+        angle = max(0, min(SERVO_ACTUATION_RANGE, angle))
         self._setServoAngle(angle)
         print(f"Servo test: moved to {angle}°")
     

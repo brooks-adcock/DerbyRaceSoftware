@@ -13,5 +13,5 @@ services:
       - /app/node_modules
     environment:
       - WATCHPACK_POLLING=true
-      - NEXT_PUBLIC_HOST_IP=192.168.1.164
+      - NEXT_PUBLIC_HOST_IP=${HOST_IP:-localhost}
 

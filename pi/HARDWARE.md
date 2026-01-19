@@ -30,19 +30,20 @@
 
 ---
 
-### 2. Gate Servo: Hitec HS-422
-**Amazon B0006O3XKO**
+### 2. Gate Servo: Hitec HS-5625MG
+**Digital high-torque metal gear servo**
 
 | Spec | Value |
 |------|-------|
-| Type | Standard analog servo |
-| Torque | 45.8 oz-in (3.3 kg-cm) @ 4.8V |
-| Speed | 0.21 sec/60° @ 4.8V |
+| Type | Digital, metal gears |
+| Torque | 110 oz-in (7.9 kg-cm) @ 4.8V, 131 oz-in (9.4 kg-cm) @ 6.0V |
+| Speed | 0.17 sec/60° @ 4.8V, 0.14 sec/60° @ 6.0V |
 | Voltage | 4.8V - 6.0V |
 | Pulse Width | 900µs - 2100µs |
 | Neutral | 1500µs |
+| Deadband | ~4µs |
 
-**Why this servo:** Reliable, plenty of torque for a gate mechanism, well-documented pulse widths.
+**Why this servo:** High torque, metal gears for durability, digital precision with tiny deadband.
 
 #### Wiring to PCA9685
 
@@ -271,7 +272,7 @@ curl -X POST http://track-controller.local:8000/race/run \
 |-----|------|--------|-------|
 | 1 | Raspberry Pi 4B (2GB+) | — | Or Pi 5 |
 | 1 | PCA9685 16-Ch PWM Driver | Amazon B07H9ZTWNC | I2C servo controller |
-| 1 | Hitec HS-422 Servo | Amazon B0006O3XKO | Gate mechanism |
+| 1 | Hitec HS-5625MG Servo | — | Gate mechanism (digital, metal gear) |
 | 4 | DFRobot SEN0503 Sensors | Mouser 426-SEN0503 | Finish line |
 | 1 | 5V 2A DC Adapter | — | Servo power |
 | 1 | 5V 3A USB-C Adapter | — | Pi power |

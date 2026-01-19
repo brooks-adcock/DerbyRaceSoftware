@@ -32,13 +32,13 @@ async def lifespan(app: FastAPI):
     
     # Startup
     hardware = MakeHardware(NUM_TRACKS)
-    registerService(NUM_TRACKS, API_PORT)
+    await registerService(NUM_TRACKS, API_PORT)
     print(f"Track Controller API started with {NUM_TRACKS} tracks")
     
     yield
     
     # Shutdown
-    unregisterService()
+    await unregisterService()
     if hasattr(hardware, "cleanup"):
         hardware.cleanup()
     print("Track Controller API shut down")
