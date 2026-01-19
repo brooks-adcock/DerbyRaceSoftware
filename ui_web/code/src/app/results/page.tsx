@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Container } from '@/components/container'
 import { Heading, Subheading } from '@/components/text'
 import { Button } from '@/components/button'
+import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import { Car, RaceSettings } from '@/lib/storage'
 
 const SCOUT_LEVELS = ['Lion', 'Tiger', 'Wolf', 'Bear', 'Webelos', 'AOL', 'Family', 'Overall']
@@ -12,6 +13,7 @@ export default function ResultsPage() {
   const [cars, set_cars] = useState<Car[]>([])
   const [settings, set_settings] = useState<RaceSettings | null>(null)
   const [is_loading, set_is_loading] = useState(true)
+  const [pending_presentation, set_pending_presentation] = useState<{ type: 'speed' | 'beauty'; level: string } | null>(null)
 
   useEffect(() => {
     Promise.all([
@@ -24,13 +26,13 @@ export default function ResultsPage() {
     })
   }, [])
 
-  const handlePresent = async (type: 'speed' | 'beauty', level: string) => {
-    if (!settings) return
+  const confirmPresent = async () => {
+    if (!settings || !pending_presentation) return
     const new_settings = {
       ...settings,
       presentation: {
-        type,
-        scout_level: level,
+        type: pending_presentation.type,
+        scout_level: pending_presentation.level,
         is_visible: true
       }
     }
@@ -39,7 +41,7 @@ export default function ResultsPage() {
       method: 'POST',
       body: JSON.stringify(new_settings),
     })
-    alert(`Presenting ${type} results for ${level}`)
+    set_pending_presentation(null)
   }
 
   const handleStopPresenting = async () => {
@@ -104,7 +106,7 @@ export default function ResultsPage() {
                 <div key={level} className="rounded-2xl border border-gray-200 p-8 shadow-sm">
                   <div className="flex items-center justify-between">
                     <h3 className="text-xl font-bold text-gray-950">{level}</h3>
-                    <Button variant="outline" onClick={() => handlePresent('speed', level)}>Present</Button>
+                    <Button variant="outline" onClick={() => set_pending_presentation({ type: 'speed', level })}>Present</Button>
                   </div>
                   <div className="mt-6 space-y-4">
                     {results.slice(0, 3).map((car, i) => (
@@ -142,7 +144,7 @@ export default function ResultsPage() {
                 <div key={level} className="rounded-2xl border border-gray-200 p-8 shadow-sm">
                   <div className="flex items-center justify-between">
                     <h3 className="text-xl font-bold text-gray-950">{level}</h3>
-                    <Button variant="outline" onClick={() => handlePresent('beauty', level)}>Present</Button>
+                    <Button variant="outline" onClick={() => set_pending_presentation({ type: 'beauty', level })}>Present</Button>
                   </div>
                   <div className="mt-6 space-y-4">
                     {results.slice(0, 3).map((car, i) => {
@@ -173,6 +175,26 @@ export default function ResultsPage() {
           </div>
         </section>
       </div>
+
+      <Dialog open={pending_presentation !== null} onClose={() => set_pending_presentation(null)} className="relative z-50">
+        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <DialogPanel className="mx-auto max-w-sm rounded-2xl bg-white p-8 shadow-2xl">
+            <DialogTitle className="text-xl font-bold text-gray-950">Present Results?</DialogTitle>
+            <p className="mt-4 text-sm text-gray-500">
+              This will display <span className="font-bold text-gray-950">{pending_presentation?.level} {pending_presentation?.type}</span> results on the public screen.
+            </p>
+            <div className="mt-8 flex justify-end gap-3">
+              <Button variant="outline" onClick={() => set_pending_presentation(null)}>
+                Cancel
+              </Button>
+              <Button onClick={confirmPresent}>
+                Show Results
+              </Button>
+            </div>
+          </DialogPanel>
+        </div>
+      </Dialog>
     </Container>
   )
 }

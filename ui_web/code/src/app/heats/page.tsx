@@ -57,6 +57,16 @@ export default function HeatsPage() {
     }
   }
 
+  const handleCompleteRace = async () => {
+    const response = await fetch('/api/race', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update_state', state: 'COMPLETE' }),
+    })
+    const data = await response.json()
+    set_race(data)
+  }
+
   const triggerGate = async () => {
     if (!race || race.current_heat_id === null) return
     const response = await fetch('/api/race', {
@@ -108,6 +118,7 @@ export default function HeatsPage() {
     : 0
   const current_heat = heats.length > 0 ? heats[current_heat_index] : null
   const is_current_heat_finished = current_heat && current_heat.lanes.every((lane) => lane.car_id === null || lane.time !== null)
+  const is_last_heat = current_heat_index === heats.length - 1
 
   return (
     <Container className="py-24">
@@ -138,10 +149,10 @@ export default function HeatsPage() {
                   <h2 className="text-3xl font-bold">Heat #{current_heat.id}</h2>
                 </div>
                 <Button 
-                  disabled={!is_current_heat_finished || current_heat_index === heats.length - 1}
-                  onClick={handleNextHeat}
+                  disabled={!is_current_heat_finished}
+                  onClick={is_last_heat ? handleCompleteRace : handleNextHeat}
                 >
-                  Next Heat
+                  {is_last_heat ? 'Complete Race' : 'Next Heat'}
                 </Button>
               </div>
 

@@ -238,7 +238,7 @@ function RegisterForm() {
             />
             <Button
               type="button"
-              outline
+              variant="outline"
               onClick={() => document.getElementById('photo')?.click()}
             >
               {photo ? 'Change Photo' : 'Choose Photo'}

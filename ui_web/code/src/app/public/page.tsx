@@ -193,7 +193,7 @@ export default function PublicPage() {
     )
   }
 
-  if (settings?.presentation?.is_visible) {
+  if (settings?.presentation?.is_visible && race.state !== 'RACING') {
     const level = settings.presentation.scout_level
     const type = settings.presentation.type
     

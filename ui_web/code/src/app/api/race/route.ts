@@ -65,6 +65,16 @@ export async function POST(request: NextRequest) {
 
       race.state = new_state;
       await Storage.saveRace(race);
+
+      // Reset presentation visibility when entering COMPLETE mode
+      if (new_state === 'COMPLETE') {
+        const settings = await Storage.getSettings();
+        if (settings.presentation) {
+          settings.presentation.is_visible = false;
+          await Storage.saveSettings(settings);
+        }
+      }
+
       return NextResponse.json(race);
     }
 

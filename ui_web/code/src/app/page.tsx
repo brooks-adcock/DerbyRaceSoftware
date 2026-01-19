@@ -107,11 +107,16 @@ export default function Home() {
                   <h3 className="text-lg font-bold text-gray-950">{car.car_name}</h3>
                   <span className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${
                     car.registration_status === 'REGISTERED' ? 'bg-green-100 text-green-700' :
+                    car.registration_status === 'COURTESY' ? 'bg-purple-100 text-purple-700' :
                     car.registration_status === 'REVIEW' ? 'bg-blue-100 text-blue-700' :
+                    car.registration_status === 'DISQUALIFIED' ? 'bg-red-100 text-red-700' :
                     'bg-amber-100 text-amber-700'
                   }`}>
-                    {car.registration_status === 'STARTED' ? 'Registration Started' : 
-                     car.registration_status === 'REVIEW' ? 'Under Review' : 'Registered'}
+                    {car.registration_status === 'STARTED' ? 'Head to Table' : 
+                     car.registration_status === 'REVIEW' ? 'Checking In...' :
+                     car.registration_status === 'DISQUALIFIED' ? 'Disqualified' :
+                     car.registration_status === 'COURTESY' ? 'Courtesy Entrant' :
+                     "You're In!"}
                   </span>
                 </div>
                 <p className="mt-1 text-sm text-gray-500">{car.scout_level} Level</p>
@@ -149,8 +154,18 @@ export default function Home() {
                 </div>
 
                 {car.registration_status === 'STARTED' && (
-                  <p className="mt-6 text-xs text-gray-500 italic text-center bg-gray-50 rounded-lg p-3">
-                    Take your car to the check-in station to complete registration.
+                  <p className="mt-6 text-xs text-gray-500 italic text-center bg-amber-50 rounded-lg p-3">
+                    Bring your car to the registration table to complete check-in!
+                  </p>
+                )}
+                {car.registration_status === 'REVIEW' && (
+                  <p className="mt-6 text-xs text-gray-500 italic text-center bg-blue-50 rounded-lg p-3">
+                    A volunteer is reviewing your registration now.
+                  </p>
+                )}
+                {car.registration_status === 'COURTESY' && (
+                  <p className="mt-6 text-xs text-gray-500 italic text-center bg-purple-50 rounded-lg p-3">
+                    You can race for fun, but won't be eligible for placement awards.
                   </p>
                 )}
               </div>
