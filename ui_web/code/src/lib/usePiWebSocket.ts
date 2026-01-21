@@ -34,6 +34,9 @@ interface UsePiWebSocketReturn {
   sendCalibration: (up_angle: number, down_angle: number) => Promise<void>
 }
 
+// How long without a message before we consider connection dead (Pi streams at 20Hz)
+const STALE_TIMEOUT_MS = 2000
+
 export function usePiWebSocket(options: UsePiWebSocketOptions): UsePiWebSocketReturn {
   const { pi_url, on_status, auto_reconnect = true, reconnect_interval_ms = 3000 } = options
   
@@ -43,6 +46,8 @@ export function usePiWebSocket(options: UsePiWebSocketOptions): UsePiWebSocketRe
   
   const ws_ref = useRef<WebSocket | null>(null)
   const reconnect_timeout_ref = useRef<NodeJS.Timeout | null>(null)
+  const last_message_time_ref = useRef<number>(0)
+  const stale_check_interval_ref = useRef<NodeJS.Timeout | null>(null)
 
   const clearReconnectTimeout = useCallback(() => {
     if (reconnect_timeout_ref.current) {
@@ -51,14 +56,37 @@ export function usePiWebSocket(options: UsePiWebSocketOptions): UsePiWebSocketRe
     }
   }, [])
 
+  const stopStaleCheck = useCallback(() => {
+    if (stale_check_interval_ref.current) {
+      clearInterval(stale_check_interval_ref.current)
+      stale_check_interval_ref.current = null
+    }
+  }, [])
+
+  const startStaleCheck = useCallback(() => {
+    stopStaleCheck()
+    last_message_time_ref.current = Date.now()
+    
+    stale_check_interval_ref.current = setInterval(() => {
+      const elapsed = Date.now() - last_message_time_ref.current
+      if (elapsed > STALE_TIMEOUT_MS && ws_ref.current) {
+        console.log('[Pi WS] Connection stale - no data for', elapsed, 'ms, forcing reconnect')
+        setStatus(null)
+        ws_ref.current.close()
+      }
+    }, 500) // Check every 500ms
+  }, [stopStaleCheck])
+
   const disconnect = useCallback(() => {
     clearReconnectTimeout()
+    stopStaleCheck()
     if (ws_ref.current) {
       ws_ref.current.close()
       ws_ref.current = null
     }
     setConnectionState('disconnected')
-  }, [clearReconnectTimeout])
+    setStatus(null)
+  }, [clearReconnectTimeout, stopStaleCheck])
 
   const connect = useCallback(() => {
     console.log('[Pi WS] connect() called, pi_url:', pi_url)
@@ -101,12 +129,15 @@ export function usePiWebSocket(options: UsePiWebSocketOptions): UsePiWebSocketRe
         console.log('[Pi WS] Connected!')
         setConnectionState('connected')
         setError(null)
+        startStaleCheck()
       }
 
       ws.onmessage = (event) => {
+        // Update last message time for stale detection
+        last_message_time_ref.current = Date.now()
+        
         try {
           const message = JSON.parse(event.data)
-          console.log('[Pi WS] Message:', message.type)
           if (message.type === 'hardware_status' && message.data) {
             setStatus(message.data)
             on_status?.(message.data)
@@ -126,7 +157,9 @@ export function usePiWebSocket(options: UsePiWebSocketOptions): UsePiWebSocketRe
       ws.onclose = (e) => {
         // Common codes: 1000=normal, 1006=abnormal (connection failed), 1015=TLS failure
         console.log('[Pi WS] Closed - code:', e.code, 'reason:', e.reason || '(none)', 'wasClean:', e.wasClean)
+        stopStaleCheck()
         setConnectionState('disconnected')
+        setStatus(null)
         ws_ref.current = null
 
         // Auto-reconnect if enabled
@@ -143,7 +176,7 @@ export function usePiWebSocket(options: UsePiWebSocketOptions): UsePiWebSocketRe
       setError(`Failed to connect: ${e}`)
       setConnectionState('error')
     }
-  }, [pi_url, on_status, auto_reconnect, reconnect_interval_ms])
+  }, [pi_url, on_status, auto_reconnect, reconnect_interval_ms, startStaleCheck, stopStaleCheck])
 
   // REST API helpers for commands
   const getBaseUrl = useCallback(() => {
