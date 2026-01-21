@@ -57,3 +57,41 @@ sudo systemctl restart track-api
 ## Default Credentials
 - User: `pi`
 - Password: `pi`
+
+## Network Discovery
+
+```bash
+# Find Pi on network via mDNS
+ping track-controller.local
+
+# Or scan network
+nmap -sn 192.168.1.0/24 | grep -i raspberry
+
+# Check mDNS registration
+avahi-browse -art | grep track-controller
+```
+
+## I2C (Servo Controller)
+
+```bash
+# Verify PCA9685 is detected (should show 0x40)
+sudo i2cdetect -y 1
+
+# If not detected, enable I2C
+sudo raspi-config  # Interface Options → I2C → Enable
+```
+
+## Race API Quick Reference
+
+```bash
+# Health check
+curl http://track-controller.local:8000/health
+
+# Start a race
+curl -X POST http://track-controller.local:8000/race/run \
+  -H "Content-Type: application/json" \
+  -d '{"heat_id": "heat-001", "occupied_lanes": [1, 2, 3, 4]}'
+
+# Get last result
+curl http://track-controller.local:8000/history/last
+```

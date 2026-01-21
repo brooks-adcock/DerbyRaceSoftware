@@ -1,5 +1,15 @@
 # SSH Connection Mystery
 
+## Resolution (Jan 19, 2026)
+
+**Root Cause:** macOS Sequoia 15+ requires explicit "Local Network" permission for apps to access LAN devices.
+
+**Fix:** System Settings → Privacy & Security → Local Network → Enable for Terminal.app (or iTerm, etc.)
+
+This was a multi-hour debugging session that ruled out every traditional network issue before discovering macOS's new permission model.
+
+---
+
 ## Basic Facts
 
 | Item | Value |
@@ -244,10 +254,18 @@ From `prepare_sd.sh`, the first-boot script:
 
 Sequoia 15+ requires apps to have explicit "Local Network" permission to access LAN devices.
 
-## TODO
+## Resolution Steps
 
-- [ ] Try ethernet instead of WiFi
-- [ ] Check `dmesg` for WiFi errors on Pi
-- [ ] Try `nc -vz 192.168.1.106 22` from Mac
-- [ ] Check if Pi can SSH to itself: `ssh localhost`
-- [ ] Try reverse SSH tunnel from Pi to Mac
+1. Open **System Settings** on Mac
+2. Navigate to **Privacy & Security → Local Network**
+3. Enable access for **Terminal.app** (or your terminal emulator)
+4. Restart Terminal and retry SSH
+
+This permission was introduced in macOS Sequoia (15.0) and blocks apps from initiating connections to local network devices without explicit user consent.
+
+## Lessons Learned
+
+- "No route to host" on macOS can mean permission denied, not a routing issue
+- UDP (traceroute) may work when TCP is blocked by app permissions
+- Always check OS-level privacy permissions on modern macOS
+- Other devices (Linux, Chromebook) working is a strong signal of Mac-specific issue

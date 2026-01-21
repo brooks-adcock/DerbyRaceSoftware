@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Storage, Heat, Lane, Race, RaceState } from '@/lib/storage';
+import { Storage } from '@/lib/storage';
+import type { Heat, Lane, Race, RaceState } from '@/lib/storage';
 import os from 'os';
 
 export async function GET() {

@@ -1,52 +1,118 @@
-# Radiant
+# Pinewood Derby Web UI
 
-Radiant is a [Tailwind Plus](https://tailwindcss.com/plus) site template built using [Tailwind CSS](https://tailwindcss.com) and [Next.js](https://nextjs.org), with a blog powered by [Sanity](https://www.sanity.io).
+Next.js web application for managing Pinewood Derby races. Built with Tailwind CSS and Radiant components.
 
-## Getting started
+## Development
 
-To get started with this template, first install the npm dependencies:
+### With Docker (Recommended)
+
+From the project root:
 
 ```bash
+./dev_start.sh      # Start services
+./dev_tail.sh       # View logs
+./dev_stop.sh       # Stop services
+```
+
+Access at http://localhost:3000
+
+### Without Docker
+
+```bash
+cd ui_web/code
 npm install
-```
-
-Next, create a new Sanity project to power the blog within this template:
-
-```bash
-npm create sanity@latest -- --env=.env.local --create-project "Radiant Blog" --dataset production
-```
-
-This will prompt you to create a new Sanity account if you don't have one already. When asked "Would you like to add configuration files for a Sanity project in this Next.js folder?", choose "n".
-
-Next, optionally import the demo seed data for the blog:
-
-```bash
-npx sanity@latest dataset import seed.tar.gz
-```
-
-Next, run the development server:
-
-```bash
 npm run dev
 ```
 
-Finally, open [http://localhost:3000](http://localhost:3000) in your browser to view the website.
+---
 
-To manage your blog content, visit the embedded Sanity Studio at [http://localhost:3000/studio](http://localhost:3000/studio).
+## Pages
 
-## Customizing
+| Route | Purpose | Access |
+|-------|---------|--------|
+| `/` | Dashboard / home | All |
+| `/register` | Car registration form | Admin |
+| `/heats` | Heat management, race control | Admin |
+| `/results` | Results leaderboard | All |
+| `/public` | Spectator display (TV/projector) | All |
+| `/admin` | System settings | Admin |
+| `/health` | Hardware connection status | Admin |
+| `/judging` | Design judging interface | Judges |
+| `/setup` | Initial system setup | Admin |
 
-You can start editing this template by modifying the files in the `/src` folder. The site will auto-update as you edit these files.
+---
 
-## License
+## API Routes
 
-This site template is a commercial product and is licensed under the [Tailwind Plus license](https://tailwindcss.com/plus/license).
+| Endpoint | Description |
+|----------|-------------|
+| `/api/cars` | CRUD for registered cars |
+| `/api/race` | Race/heat management, proxies to Pi |
+| `/api/hardware` | Hardware status from Pi |
+| `/api/settings` | System configuration |
 
-## Learn more
+---
 
-To learn more about the technologies used in this site template, see the following resources:
+## Key Components
 
-- [Tailwind CSS](https://tailwindcss.com/docs) - the official Tailwind CSS documentation
-- [Next.js](https://nextjs.org/docs) - the official Next.js documentation
-- [Headless UI](https://headlessui.dev) - the official Headless UI documentation
-- [Sanity](https://www.sanity.io) - the Sanity website
+Located in `src/components/`:
+
+| Component | Purpose |
+|-----------|---------|
+| `countdown-overlay.tsx` | Race start countdown |
+| `setup-checklist.tsx` | Pre-race setup verification |
+| `navigation-wrapper.tsx` | Responsive nav with drawer |
+| `menu-drawer.tsx` | Mobile navigation |
+
+### UI Library (Radiant)
+
+Pre-built components from `src/components/`:
+- `button.tsx` - Primary/secondary/outline buttons
+- `text.tsx` - Heading, Subheading, Lead typography
+- `container.tsx` - Max-width wrapper
+- `navbar.tsx`, `footer.tsx` - Layout components
+
+---
+
+## Data Storage
+
+Race data persists in `data/` directory:
+
+| File | Contents |
+|------|----------|
+| `cars.json` | Registered cars |
+| `settings.json` | System configuration |
+
+---
+
+## Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `NEXT_PUBLIC_HOST_IP` | Pi's IP for API calls | `localhost` |
+| `WATCHPACK_POLLING` | Enable hot-reload in Docker | `true` |
+
+---
+
+## Hardware Communication
+
+The UI connects to the Raspberry Pi track controller:
+
+```typescript
+// src/lib/usePiWebSocket.ts
+// WebSocket hook for real-time race results
+
+// src/lib/storage.ts  
+// Data persistence and Pi API proxy
+```
+
+When Pi is unavailable, the UI operates in standalone mode with manual time entry.
+
+---
+
+## Tech Stack
+
+- **Framework:** Next.js 14 (App Router)
+- **Styling:** Tailwind CSS
+- **Components:** Headless UI, Heroicons
+- **Animations:** Framer Motion

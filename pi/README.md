@@ -70,6 +70,40 @@ The script will:
 | GET | `/history/{heat_id}` | Get specific heat result |
 | GET | `/history/last` | Get most recent heat result |
 | WS | `/ws/results` | WebSocket for real-time race results |
+| WS | `/ws/status` | WebSocket for live hardware status (20Hz) |
+
+### WebSocket: `/ws/results`
+
+Subscribe to race results as they complete:
+
+```javascript
+const ws = new WebSocket('ws://track-controller.local:8000/ws/results');
+ws.onmessage = (event) => {
+  const msg = JSON.parse(event.data);
+  if (msg.type === 'race_result') {
+    console.log('Race finished:', msg.data);
+  }
+};
+// Ping to keep alive
+ws.send(JSON.stringify({ type: 'ping' }));
+```
+
+### WebSocket: `/ws/status`
+
+Stream live hardware state (sensor triggers, servo angle):
+
+```javascript
+const ws = new WebSocket('ws://track-controller.local:8000/ws/status');
+ws.onmessage = (event) => {
+  const msg = JSON.parse(event.data);
+  if (msg.type === 'hardware_status') {
+    // { sensors: [true, true, false, true], servo_angle: 90, ... }
+  }
+};
+// Pause/resume streaming
+ws.send(JSON.stringify({ type: 'stop' }));
+ws.send(JSON.stringify({ type: 'start' }));
+```
 
 ### Example: Run a Race
 

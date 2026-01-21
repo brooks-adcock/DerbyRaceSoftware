@@ -4,6 +4,17 @@ These are the AI memories/notes that persist across all projects.
 
 ---
 
+## This Project: Pinewood Derby Race Software
+
+A complete race management system with:
+- **Web UI** (`ui_web/`) - Next.js app for race management, registration, results
+- **Track Controller** (`pi/`) - Raspberry Pi FastAPI server for gate + sensors
+- **Mechanical** (`mechanical/`) - 3D printable parts for track hardware
+
+The Pi connects to the web UI via REST + WebSocket. In dev mode, the Pi runs in mock hardware mode with simulated race times.
+
+---
+
 ## Project Structure
 
 **Docker Service Directory Layout**
