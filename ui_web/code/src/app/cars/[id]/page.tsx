@@ -216,6 +216,19 @@ export default function CarAdminPage() {
                     <option value="DISQUALIFIED">Disqualified</option>
                   </select>
                 </div>
+
+                <div className="rounded-xl border border-gray-200 p-6">
+                  <label className="block text-sm font-medium text-gray-950">Category</label>
+                  <select
+                    value={car.scout_level}
+                    onChange={(e) => handleUpdate({ scout_level: e.target.value })}
+                    className="mt-2 block w-full rounded-lg border border-gray-200 px-4 py-2 text-sm font-bold text-gray-950 focus:border-gray-950 focus:outline-none shadow-sm"
+                  >
+                    <option value="Lion/Tiger">Lion/Tiger</option>
+                    <option value="Older Scouts">Older Scouts</option>
+                    <option value="Family">Family</option>
+                  </select>
+                </div>
               </div>
             </div>
           </section>

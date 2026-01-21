@@ -7,7 +7,7 @@ import { Button } from '@/components/button'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Car } from '@/lib/storage'
 
-const SCOUT_LEVELS = ['Lion', 'Tiger', 'Wolf', 'Bear', 'Webelos', 'AOL', 'Family']
+const SCOUT_LEVELS = ['Lion/Tiger', 'Older Scouts', 'Family']
 
 function RegisterForm() {
   const router = useRouter()
@@ -19,7 +19,7 @@ function RegisterForm() {
   const [car_name, set_car_name] = useState('')
   const [is_beauty, set_is_beauty] = useState(false)
   const [win_preference, set_win_preference] = useState<'beauty' | 'speed'>('speed')
-  const [scout_level, set_scout_level] = useState('Wolf')
+  const [scout_level, set_scout_level] = useState('Lion/Tiger')
   const [photo, set_photo] = useState<File | null>(null)
   const [existing_photo_hash, set_existing_photo_hash] = useState('')
   const [is_submitting, set_is_submitting] = useState(false)

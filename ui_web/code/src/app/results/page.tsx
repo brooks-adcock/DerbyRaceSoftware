@@ -5,9 +5,9 @@ import { Container } from '@/components/container'
 import { Heading, Subheading } from '@/components/text'
 import { Button } from '@/components/button'
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
-import { Car, RaceSettings } from '@/lib/storage'
+import type { Car, RaceSettings } from '@/lib/storage'
 
-const SCOUT_LEVELS = ['Lion', 'Tiger', 'Wolf', 'Bear', 'Webelos', 'AOL', 'Family', 'Overall']
+const SCOUT_LEVELS = ['Overall', 'Lion/Tiger', 'Older Scouts', 'Family']
 
 export default function ResultsPage() {
   const [cars, set_cars] = useState<Car[]>([])

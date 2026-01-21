@@ -1,0 +1,11 @@
+---
+description: Package management preferences
+globs: 
+alwaysApply: true
+---
+
+# Package Management
+
+- **NEVER use Homebrew (brew)**. This is a MacPorts shop.
+- Use `sudo port install <package>` for installing packages on macOS.
+- Use `port search <package>` to find available packages.

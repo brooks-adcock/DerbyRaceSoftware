@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Container } from '@/components/container'
 import { Heading, Subheading } from '@/components/text'
 import { Link } from '@/components/link'
-import { RaceState } from '@/lib/storage'
+import type { RaceState } from '@/lib/storage'
 import { 
   ClipboardDocumentListIcon, 
   Cog6ToothIcon, 
