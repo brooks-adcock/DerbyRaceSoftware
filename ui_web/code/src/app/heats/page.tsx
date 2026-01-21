@@ -5,14 +5,17 @@ import { Container } from '@/components/container'
 import { Heading, Subheading } from '@/components/text'
 import { Button } from '@/components/button'
 import { CountdownOverlay } from '@/components/countdown-overlay'
-import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
-import type { Heat, RaceSettings, Race } from '@/lib/storage'
+import type { RaceSettings, Race } from '@/lib/storage'
+
+// Heat control state machine: idle -> ready -> racing -> idle
+type HeatState = 'idle' | 'ready' | 'racing'
 
 export default function HeatsPage() {
   const [race, set_race] = useState<Race | null>(null)
   const [settings, set_settings] = useState<RaceSettings | null>(null)
   const [is_loading, set_is_loading] = useState(true)
-  const [is_rerun_modal_open, set_is_rerun_modal_open] = useState(false)
+  const [heat_state, set_heat_state] = useState<HeatState>('idle')
+  const [countdown_end, set_countdown_end] = useState<number | null>(null)
 
   const fetchData = async () => {
     const [race_data, settings_data] = await Promise.all([
@@ -37,8 +40,55 @@ export default function HeatsPage() {
     })
     const data = await response.json()
     set_race(data)
+    set_heat_state('idle')
   }
 
+  // Step 1: Ready Heat - raise the gate
+  const handleReadyHeat = async () => {
+    await fetch('/api/race', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'raise_gate' }),
+    })
+    set_heat_state('ready')
+  }
+
+  // Step 2: Drop Gate - countdown then start the race
+  const handleDropGate = async () => {
+    if (!race || race.current_heat_id === null) return
+    
+    // Clear existing times for rerun
+    const current_heat = race.heats.find(h => h.id === race.current_heat_id)
+    if (current_heat) {
+      for (const lane of current_heat.lanes) {
+        if (lane.car_id !== null) {
+          lane.time = null
+        }
+      }
+    }
+    
+    set_heat_state('racing')
+    
+    // Start countdown (3 seconds) - use local state so polling doesn't overwrite it
+    const countdown_ms = 3000
+    set_countdown_end(Date.now() + countdown_ms)
+    
+    // Wait for countdown to complete, THEN drop gate
+    await new Promise(resolve => setTimeout(resolve, countdown_ms))
+    set_countdown_end(null)
+    
+    // Now trigger the gate drop and race
+    const response = await fetch('/api/race', {
+      method: 'POST',
+      body: JSON.stringify({ 
+        action: 'trigger_gate',
+        heat_id: race.current_heat_id
+      }),
+    })
+    const data = await response.json()
+    set_race(data)
+  }
+
+  // After race: go to next heat
   const handleNextHeat = async () => {
     if (race && race.current_heat_id !== null) {
       const current_idx = race.heats.findIndex(h => h.id === race.current_heat_id)
@@ -55,6 +105,23 @@ export default function HeatsPage() {
         set_race(data)
       }
     }
+    set_heat_state('idle')
+  }
+
+  // After race: rerun current heat (clear times first)
+  const handleRerunHeat = async () => {
+    if (!race || race.current_heat_id === null) return
+    
+    const response = await fetch('/api/race', {
+      method: 'POST',
+      body: JSON.stringify({ 
+        action: 'clear_heat_times',
+        heat_id: race.current_heat_id
+      }),
+    })
+    const data = await response.json()
+    set_race(data)
+    set_heat_state('idle')
   }
 
   const handleCompleteRace = async () => {
@@ -65,34 +132,6 @@ export default function HeatsPage() {
     })
     const data = await response.json()
     set_race(data)
-  }
-
-  const triggerGate = async () => {
-    if (!race || race.current_heat_id === null) return
-    const response = await fetch('/api/race', {
-      method: 'POST',
-      body: JSON.stringify({ 
-        action: 'trigger_gate',
-        heat_id: race.current_heat_id
-      }),
-    })
-    const data = await response.json()
-    set_race(data)
-    await fetch('/api/hardware?action=gate_test')
-  }
-
-  const handleTriggerGate = async () => {
-    if (!race || race.current_heat_id === null) return
-    const current_heat = race.heats.find(h => h.id === race.current_heat_id)
-    if (!current_heat) return
-
-    const has_times = current_heat.lanes.some(l => l.time !== null)
-    
-    if (has_times) {
-      set_is_rerun_modal_open(true)
-    } else {
-      await triggerGate()
-    }
   }
 
   const submitTime = async (lane_index: number, time: number) => {
@@ -122,7 +161,7 @@ export default function HeatsPage() {
 
   return (
     <Container className="py-24">
-      <CountdownOverlay countdown_end={race.countdown_end} />
+      <CountdownOverlay countdown_end={countdown_end} />
       <div className="flex items-end justify-between">
         <div>
           <Subheading>Race Control</Subheading>
@@ -134,7 +173,16 @@ export default function HeatsPage() {
         </div>
       </div>
 
-      {heats.length === 0 ? (
+      {race.state === 'COMPLETE' ? (
+        <div className="mt-12 rounded-3xl bg-green-50 border-2 border-green-200 p-12 text-center">
+          <div className="text-6xl mb-4">🏁</div>
+          <h2 className="text-3xl font-bold text-green-800">Race Complete!</h2>
+          <p className="mt-4 text-xl text-green-700">{heats.length} heats finished</p>
+          <div className="mt-8">
+            <Button href="/results">View Results</Button>
+          </div>
+        </div>
+      ) : heats.length === 0 ? (
         <div className="mt-12 rounded-2xl border-2 border-dashed border-gray-200 p-12 text-center">
           <p className="text-gray-500">No heats generated yet. Click "Generate Heats" to begin.</p>
         </div>
@@ -145,15 +193,19 @@ export default function HeatsPage() {
             <section className="rounded-3xl bg-gray-950 p-8 text-white shadow-2xl">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-xs font-bold text-gray-400 uppercase">Currently Running</div>
+                  <div className="text-xs font-bold text-gray-400 uppercase">
+                    {heat_state === 'idle' && 'Prepare Heat'}
+                    {heat_state === 'ready' && 'Gate Up - Ready'}
+                    {heat_state === 'racing' && 'Race Complete'}
+                  </div>
                   <h2 className="text-3xl font-bold">Heat #{current_heat.id}</h2>
                 </div>
-                <Button 
-                  disabled={!is_current_heat_finished}
-                  onClick={is_last_heat ? handleCompleteRace : handleNextHeat}
-                >
-                  {is_last_heat ? 'Complete Race' : 'Next Heat'}
-                </Button>
+                {/* Top-right complete button only when finished and on last heat */}
+                {heat_state === 'racing' && is_current_heat_finished && is_last_heat && (
+                  <Button onClick={handleCompleteRace}>
+                    Complete Race
+                  </Button>
+                )}
               </div>
 
               <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -163,21 +215,21 @@ export default function HeatsPage() {
                     <div className="mt-2 text-2xl font-bold">
                       {lane.car_id ? `Car #${lane.car_id}` : 'Empty'}
                     </div>
-                    <div className="mt-4 font-mono text-4xl text-blue-600">
-                      {lane.time && (!race.countdown_end || Date.now() > race.countdown_end) ? lane.time?.toFixed(3) : '--.---'}
+                    <div className="mt-4 font-mono text-4xl text-blue-400">
+                      {lane.time && !countdown_end ? lane.time?.toFixed(3) : '--.---'}
                     </div>
-                    {lane.car_id && !lane.time && (
+                    {lane.car_id && !lane.time && heat_state === 'racing' && (
                       <div className="mt-4 flex gap-2">
                         <input 
                           type="number" 
                           step="0.001" 
-                          placeholder="Time"
+                          placeholder="Manual time"
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') {
                               submitTime(i, parseFloat((e.target as HTMLInputElement).value))
                             }
                           }}
-                          className="w-full rounded bg-white/10 px-2 py-1 text-sm text-white focus:outline-none"
+                          className="w-full rounded bg-white/10 px-2 py-1 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                         />
                       </div>
                     )}
@@ -185,13 +237,50 @@ export default function HeatsPage() {
                 ))}
               </div>
 
-              <div className="mt-10 flex justify-center border-t border-white/10 pt-8">
-                <Button 
-                  onClick={handleTriggerGate}
-                  className="w-full sm:w-auto px-16 py-3 text-lg !bg-blue-600 !text-white hover:!bg-blue-500 border-none shadow-lg shadow-blue-900/20"
-                >
-                  Trigger Gate
-                </Button>
+              {/* Control Buttons - State Machine */}
+              <div className="mt-10 border-t border-white/10 pt-8">
+                {heat_state === 'idle' && (
+                  <div className="flex justify-center">
+                    <Button 
+                      onClick={handleReadyHeat}
+                      className="px-16 py-3 text-lg !bg-yellow-500 !text-gray-900 hover:!bg-yellow-400 border-none shadow-lg"
+                    >
+                      Ready Heat
+                    </Button>
+                  </div>
+                )}
+
+                {heat_state === 'ready' && (
+                  <div className="flex justify-center">
+                    <Button 
+                      onClick={handleDropGate}
+                      className="px-16 py-3 text-lg !bg-green-500 !text-white hover:!bg-green-400 border-none shadow-lg animate-pulse"
+                    >
+                      Drop Gate
+                    </Button>
+                  </div>
+                )}
+
+                {heat_state === 'racing' && (
+                  <div className="flex justify-between gap-4">
+                    <Button 
+                      onClick={handleRerunHeat}
+                      variant="outline"
+                      className="px-8 py-3 !border-red-500 !text-red-400 hover:!bg-red-500/10"
+                    >
+                      Rerun Heat
+                    </Button>
+                    {!is_last_heat && (
+                      <Button 
+                        onClick={handleNextHeat}
+                        disabled={!is_current_heat_finished}
+                        className="px-8 py-3 !bg-blue-600 !text-white hover:!bg-blue-500 border-none disabled:opacity-50"
+                      >
+                        Next Heat
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
             </section>
           )}
@@ -230,31 +319,6 @@ export default function HeatsPage() {
         </div>
       )}
 
-      <Dialog open={is_rerun_modal_open} onClose={() => set_is_rerun_modal_open(false)} className="relative z-50">
-        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
-        <div className="fixed inset-0 flex items-center justify-center p-4">
-          <DialogPanel className="mx-auto max-w-sm rounded-2xl bg-white p-8 shadow-2xl">
-            <DialogTitle className="text-xl font-bold text-gray-950">Rerun Heat?</DialogTitle>
-            <p className="mt-4 text-sm text-gray-500">
-              This heat already has times recorded. Rerunning will overwrite the existing results for all cars in this heat.
-            </p>
-            <div className="mt-8 flex justify-end gap-3">
-              <Button variant="outline" onClick={() => set_is_rerun_modal_open(false)}>
-                Cancel
-              </Button>
-              <Button 
-                className="!bg-red-600 !text-white hover:!bg-red-500"
-                onClick={async () => {
-                  set_is_rerun_modal_open(false)
-                  await triggerGate()
-                }}
-              >
-                Rerun Heat
-              </Button>
-            </div>
-          </DialogPanel>
-        </div>
-      </Dialog>
     </Container>
   )
 }

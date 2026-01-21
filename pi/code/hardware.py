@@ -53,6 +53,7 @@ class HardwareInterface:
         self.current_heat: Optional[HeatSetup] = None
         self._result_callback: Optional[Callable] = None
         self.current_servo_angle: int = 0  # Track current angle for status
+        self._heat_cancelled = False  # Flag to cancel in-progress heat
         
         # Load calibration from config file or use defaults
         self.servo_up_angle = DEFAULT_SERVO_UP_ANGLE
@@ -118,6 +119,8 @@ class HardwareInterface:
     
     def prepareRace(self, setup: HeatSetup):
         """Prepare for a race with given configuration."""
+        # Cancel any in-progress heat (false start handling)
+        self._heat_cancelled = True
         self.current_heat = setup
         # Ensure gate is UP before race
         self.raiseGate()
@@ -186,15 +189,24 @@ class MockHardware(HardwareInterface):
         if not self.current_heat:
             raise ValueError("No heat configured - call prepareRace first")
         
+        # Reset cancel flag - this is now the active heat
+        self._heat_cancelled = False
+        heat_id = self.current_heat.heat_id
+        
         started_at = datetime.now()
         
         # Drop the gate to release cars - START timing
         self.dropGate()
         start_time_ns = time.monotonic_ns()
-        print(f"[MOCK] Race started for heat {self.current_heat.heat_id}")
+        print(f"[MOCK] Heat {self.current_heat.heat_id} started")
         
-        # Simulate race duration (2-5 seconds typical for pinewood derby)
-        await asyncio.sleep(random.uniform(2.0, 4.0))
+        # Simulate heat duration (2-5 seconds typical for pinewood derby)
+        # Check cancel flag during simulation
+        for _ in range(int(random.uniform(20, 40))):  # 2-4 seconds in 100ms chunks
+            if self._heat_cancelled:
+                print(f"[MOCK] Heat {heat_id} cancelled (false start)")
+                raise ValueError(f"Heat cancelled - false start for {heat_id}")
+            await asyncio.sleep(0.1)
         
         # Generate mock results for occupied lanes only
         lane_results: List[LaneResult] = []
@@ -355,6 +367,10 @@ class RealHardware(HardwareInterface):
         if not self.current_heat:
             raise ValueError("No heat configured - call prepareRace first")
         
+        # Reset cancel flag - this is now the active heat
+        self._heat_cancelled = False
+        heat_id = self.current_heat.heat_id  # Capture for logging if cancelled
+        
         started_at = datetime.now()
         occupied_lanes = set(self.current_heat.occupied_lanes)
         
@@ -370,12 +386,17 @@ class RealHardware(HardwareInterface):
         
         # Record start time with high precision
         start_time_ns = time.monotonic_ns()
-        print(f"Race started for heat {self.current_heat.heat_id} - timing started")
+        print(f"Heat {self.current_heat.heat_id} started - timing started")
         
         # Monitor sensors until all occupied lanes finish or timeout
         timeout_ns = int(SENSOR_TIMEOUT_SEC * 1_000_000_000)
         
         while len(lanes_finished) < len(occupied_lanes):
+            # Check if heat was cancelled (false start / re-run)
+            if self._heat_cancelled:
+                print(f"Heat {heat_id} cancelled (false start)")
+                raise ValueError(f"Heat cancelled - false start for {heat_id}")
+            
             current_ns = time.monotonic_ns()
             elapsed_ns = current_ns - start_time_ns
             

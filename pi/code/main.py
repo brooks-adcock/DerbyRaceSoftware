@@ -131,6 +131,9 @@ async def runRace(setup: HeatSetup):
     
     Accepts heat_id and occupied_lanes, drops the gate, monitors sensors,
     and returns results. Results are also broadcast via WebSocket and persisted.
+    
+    If a heat is already in progress and a new heat is started (false start),
+    the previous heat is cancelled and only the new heat's results are returned.
     """
     # Validate lanes
     for lane in setup.occupied_lanes:
@@ -142,7 +145,14 @@ async def runRace(setup: HeatSetup):
     
     # Prepare and run the race
     hardware.prepareRace(setup)
-    result = await hardware.runRace()
+    
+    try:
+        result = await hardware.runRace()
+    except ValueError as e:
+        # Heat was cancelled (false start) - return 409 Conflict
+        if "cancelled" in str(e).lower():
+            raise HTTPException(status_code=409, detail=str(e))
+        raise
     
     # Persist result
     result_dict = result.model_dump(mode="json")

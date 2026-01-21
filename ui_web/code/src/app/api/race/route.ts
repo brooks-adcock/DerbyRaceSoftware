@@ -151,6 +151,55 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(race);
     }
 
+    if (body.action === 'clear_heat_times') {
+      const { heat_id } = body;
+      const heat = race.heats.find(h => h.id === heat_id);
+      
+      if (heat) {
+        const cars = await Storage.getCars();
+        
+        for (const lane of heat.lanes) {
+          lane.time = null;
+          
+          // Also remove from car's track_times
+          if (lane.car_id) {
+            const car = cars.find(c => c.id === lane.car_id);
+            if (car) {
+              car.track_times = car.track_times.filter(t => t.heat_id !== heat_id);
+              const included_times = car.track_times.filter(t => t.is_included).map(t => t.time);
+              car.average_time = included_times.length > 0 
+                ? included_times.reduce((a, b) => a + b, 0) / included_times.length 
+                : undefined;
+            }
+          }
+        }
+        
+        await Storage.saveCars(cars);
+        await Storage.saveRace(race);
+      }
+      return NextResponse.json(race);
+    }
+
+    if (body.action === 'raise_gate') {
+      // Raise gate to ready position (hold cars)
+      const settings = await Storage.getSettings();
+      
+      if (settings.pi_url) {
+        try {
+          await fetch(`http://${settings.pi_url}/gate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ is_down: false }),
+          });
+          console.log('Gate raised via Pi');
+        } catch (error) {
+          console.error('Failed to raise gate on Pi:', error);
+        }
+      }
+      
+      return NextResponse.json({ status: 'ok', gate: 'up' });
+    }
+
     if (body.action === 'trigger_gate') {
       const { heat_id } = body;
       const heat = heat_id 
@@ -158,27 +207,77 @@ export async function POST(request: NextRequest) {
         : race.heats.find((h: Heat) => h.lanes.some(l => l.time === null && l.car_id !== null));
 
       if (heat) {
-        race.countdown_end = Date.now() + 3500; // 3 seconds + 500ms buffer
+        race.countdown_end = null; // Clear countdown - UI handles timing
         
+        const settings = await Storage.getSettings();
         const cars = await Storage.getCars();
         
+        // Build occupied_lanes array (1-indexed lane numbers with cars)
+        const occupied_lanes: number[] = [];
+        for (let i = 0; i < heat.lanes.length; i++) {
+          if (heat.lanes[i].car_id !== null) {
+            occupied_lanes.push(i + 1); // Pi uses 1-indexed lanes
+          }
+        }
+        
+        // Try to run race on Pi hardware
+        let pi_results: { lane_results: Array<{ lane_number: number; finish_time_ms: number | null; is_dnf: boolean }> } | null = null;
+        
+        if (settings.pi_url) {
+          try {
+            const pi_response = await fetch(`http://${settings.pi_url}/race/run`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                heat_id: `heat-${heat.id}`,
+                occupied_lanes,
+              }),
+            });
+            
+            if (pi_response.ok) {
+              pi_results = await pi_response.json();
+              console.log('Pi race results:', pi_results);
+            } else if (pi_response.status === 409) {
+              // Heat was cancelled (false start) - this is expected, ignore
+              console.log('Pi heat cancelled (false start), awaiting new heat results');
+            } else {
+              console.error('Pi race failed:', await pi_response.text());
+            }
+          } catch (error) {
+            console.error('Failed to connect to Pi:', error);
+          }
+        }
+        
+        // Apply results - from Pi if available, otherwise leave null for manual entry
         for (let i = 0; i < heat.lanes.length; i++) {
           const lane = heat.lanes[i];
           if (lane.car_id) {
-            const random_time = Math.round((8 + Math.random() * 3) * 1000) / 1000;
-            lane.time = random_time;
+            let finish_time: number | null = null;
             
-            const car = cars.find(c => c.id === lane.car_id);
-            if (car) {
-              const is_included = car.registration_status !== 'COURTESY';
-              // Remove existing time for this heat if any
-              car.track_times = car.track_times.filter(t => t.heat_id !== heat.id);
-              car.track_times.push({ heat_id: heat.id, track_number: i + 1, time: random_time, is_included });
-              
-              const included_times = car.track_times.filter(t => t.is_included).map(t => t.time);
-              car.average_time = included_times.length > 0 
-                ? included_times.reduce((a, b) => a + b, 0) / included_times.length 
-                : undefined;
+            if (pi_results) {
+              // Find result for this lane (Pi uses 1-indexed)
+              const lane_result = pi_results.lane_results.find(r => r.lane_number === i + 1);
+              if (lane_result && lane_result.finish_time_ms !== null && !lane_result.is_dnf) {
+                // Convert ms to seconds
+                finish_time = Math.round(lane_result.finish_time_ms) / 1000;
+              }
+            }
+            
+            lane.time = finish_time;
+            
+            if (finish_time !== null) {
+              const car = cars.find(c => c.id === lane.car_id);
+              if (car) {
+                const is_included = car.registration_status !== 'COURTESY';
+                // Remove existing time for this heat if any
+                car.track_times = car.track_times.filter(t => t.heat_id !== heat.id);
+                car.track_times.push({ heat_id: heat.id, track_number: i + 1, time: finish_time, is_included });
+                
+                const included_times = car.track_times.filter(t => t.is_included).map(t => t.time);
+                car.average_time = included_times.length > 0 
+                  ? included_times.reduce((a, b) => a + b, 0) / included_times.length 
+                  : undefined;
+              }
             }
           }
         }
