@@ -8,6 +8,7 @@ import json
 import asyncio
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
 
 from models import HeatSetup, HeatResult, GatePosition, HealthResponse, ServoCalibration, ServoTestRequest
@@ -49,6 +50,15 @@ app = FastAPI(
     description="API for controlling race gate and reading finish sensors",
     version="1.0.0",
     lifespan=lifespan,
+)
+
+# Enable CORS for web UI connections
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins for local network
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
@@ -225,6 +235,67 @@ async def resultsWebsocket(websocket: WebSocket):
         if websocket in active_websockets:
             active_websockets.remove(websocket)
         print(f"WebSocket client disconnected. Total clients: {len(active_websockets)}")
+
+
+# ----- WebSocket for Real-time Hardware Status -----
+
+STATUS_STREAM_INTERVAL_MS = 50  # 20Hz updates
+
+@app.websocket("/ws/status")
+async def statusWebsocket(websocket: WebSocket):
+    """
+    WebSocket endpoint for real-time hardware status streaming.
+    
+    Streams sensor states and servo angle at 20Hz for live monitoring.
+    Send {"type": "stop"} to pause streaming, {"type": "start"} to resume.
+    """
+    await websocket.accept()
+    print("Hardware status WebSocket connected")
+    
+    is_streaming = True
+    
+    async def streamStatus():
+        """Background task to stream hardware status."""
+        nonlocal is_streaming
+        while True:
+            if is_streaming:
+                try:
+                    status = hardware.getHardwareStatus()
+                    await websocket.send_text(json.dumps({
+                        "type": "hardware_status",
+                        "data": status
+                    }))
+                except Exception:
+                    break
+            await asyncio.sleep(STATUS_STREAM_INTERVAL_MS / 1000.0)
+    
+    # Start streaming in background
+    stream_task = asyncio.create_task(streamStatus())
+    
+    try:
+        while True:
+            data = await websocket.receive_text()
+            try:
+                message = json.loads(data)
+                msg_type = message.get("type")
+                
+                if msg_type == "stop":
+                    is_streaming = False
+                    await websocket.send_text(json.dumps({"type": "stopped"}))
+                elif msg_type == "start":
+                    is_streaming = True
+                    await websocket.send_text(json.dumps({"type": "started"}))
+                elif msg_type == "ping":
+                    await websocket.send_text(json.dumps({"type": "pong"}))
+                    
+            except json.JSONDecodeError:
+                pass
+                
+    except WebSocketDisconnect:
+        pass
+    finally:
+        stream_task.cancel()
+        print("Hardware status WebSocket disconnected")
 
 
 # ----- Manual Entry Point (for direct python execution) -----

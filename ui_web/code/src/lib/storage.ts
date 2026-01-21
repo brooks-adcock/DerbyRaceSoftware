@@ -45,6 +45,7 @@ export interface RaceSettings {
   n_tracks: number;
   gate_up_val: number;
   gate_down_val: number;
+  pi_url: string;  // URL to Pi hardware controller (e.g., "192.168.1.100:8000")
   presentation?: {
     type: 'speed' | 'beauty';
     scout_level: string;
@@ -107,6 +108,7 @@ export const Storage = {
       n_tracks: 4,
       gate_up_val: 0,
       gate_down_val: 1,
+      pi_url: '',
     });
   },
 

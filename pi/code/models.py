@@ -50,3 +50,17 @@ class ServoCalibration(BaseModel):
 class ServoTestRequest(BaseModel):
     """Request to test servo at a specific angle."""
     angle: int  # 0-180
+
+
+class SensorState(BaseModel):
+    """State of a single lane sensor."""
+    lane: int
+    is_blocked: bool  # True = beam broken (car present)
+
+
+class HardwareStatus(BaseModel):
+    """Real-time hardware status for WebSocket streaming."""
+    is_gate_down: bool
+    servo_angle: int
+    sensors: List[SensorState]
+    timestamp_ms: int

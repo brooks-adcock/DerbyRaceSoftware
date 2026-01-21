@@ -42,3 +42,6 @@ yarn-debug.log*
 yarn-error.log*
 *.tsbuildinfo
 
+# User uploaded photos
+ui_web/code/public/photos/
+

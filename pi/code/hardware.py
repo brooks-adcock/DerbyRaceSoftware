@@ -52,6 +52,7 @@ class HardwareInterface:
         self.is_gate_down = False
         self.current_heat: Optional[HeatSetup] = None
         self._result_callback: Optional[Callable] = None
+        self.current_servo_angle: int = 0  # Track current angle for status
         
         # Load calibration from config file or use defaults
         self.servo_up_angle = DEFAULT_SERVO_UP_ANGLE
@@ -133,21 +134,52 @@ class HardwareInterface:
             "current_heat_id": self.current_heat.heat_id if self.current_heat else None,
             "calibration": self.getCalibration(),
         }
+    
+    def getSensorStates(self) -> List[Dict]:
+        """Get current state of all lane sensors. Override in subclass."""
+        raise NotImplementedError
+    
+    def getHardwareStatus(self) -> Dict:
+        """Get real-time hardware status for WebSocket streaming."""
+        return {
+            "is_gate_down": self.is_gate_down,
+            "servo_angle": self.current_servo_angle,
+            "sensors": self.getSensorStates(),
+            "timestamp_ms": int(time.time() * 1000),
+        }
 
 
 class MockHardware(HardwareInterface):
     """Mock hardware for local development and testing."""
     
+    def __init__(self, num_tracks: int = 4):
+        super().__init__(num_tracks)
+        # Mock sensor states (randomly fluctuate for demo)
+        self._mock_sensor_states = [False] * num_tracks
+    
     def setGate(self, is_down: bool):
         self.is_gate_down = is_down
-        angle = self.servo_down_angle if is_down else self.servo_up_angle
+        self.current_servo_angle = self.servo_down_angle if is_down else self.servo_up_angle
         position = "DOWN (released)" if is_down else "UP (holding)"
-        print(f"[MOCK] Gate moved to {position} (angle={angle}°)")
+        print(f"[MOCK] Gate moved to {position} (angle={self.current_servo_angle}°)")
     
     def testServoAngle(self, angle: int):
         """Test servo at specific angle."""
         angle = max(0, min(SERVO_ACTUATION_RANGE, angle))
+        self.current_servo_angle = angle
         print(f"[MOCK] Servo moved to {angle}°")
+    
+    def getSensorStates(self) -> List[Dict]:
+        """Get mock sensor states."""
+        # Add some randomness for testing
+        if random.random() < 0.05:  # 5% chance to toggle a random sensor
+            idx = random.randint(0, self.num_tracks - 1)
+            self._mock_sensor_states[idx] = not self._mock_sensor_states[idx]
+        
+        return [
+            {"lane": i + 1, "is_blocked": self._mock_sensor_states[i]}
+            for i in range(self.num_tracks)
+        ]
     
     async def runRace(self) -> HeatResult:
         """Simulate a race with random finish times."""
@@ -290,6 +322,7 @@ class RealHardware(HardwareInterface):
         angle = self.servo_down_angle if is_down else self.servo_up_angle
         self._setServoAngle(angle)
         self.is_gate_down = is_down
+        self.current_servo_angle = angle
         state = "DOWN (released)" if is_down else "UP (holding)"
         print(f"Gate moved to {state} (angle={angle}°)")
     
@@ -297,7 +330,21 @@ class RealHardware(HardwareInterface):
         """Move servo to a specific angle for calibration testing."""
         angle = max(0, min(SERVO_ACTUATION_RANGE, angle))
         self._setServoAngle(angle)
+        self.current_servo_angle = angle
         print(f"Servo test: moved to {angle}°")
+    
+    def getSensorStates(self) -> List[Dict]:
+        """Get current state of all lane sensors."""
+        states = []
+        for lane in range(1, self.num_tracks + 1):
+            pin_index = lane - 1
+            if pin_index < len(self.sensor_pins):
+                # SEN0503: LOW = beam broken = car present
+                is_blocked = self.GPIO.input(self.sensor_pins[pin_index]) == self.GPIO.LOW
+            else:
+                is_blocked = False
+            states.append({"lane": lane, "is_blocked": is_blocked})
+        return states
     
     async def runRace(self) -> HeatResult:
         """Run a race, monitoring sensors for finish times.
