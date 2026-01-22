@@ -1,6 +1,12 @@
 import type { Car, Heat, Lane, RaceSettings } from './storage';
 
+export type HeatAlgorithmKey = 'rotation' | 'chaos';
 export type HeatAlgorithm = (cars: Car[], settings: RaceSettings) => Heat[];
+
+export const ALGORITHM_DISPLAY_NAMES: Record<HeatAlgorithmKey, string> = {
+  'rotation': 'Max Efficiency',
+  'chaos': 'Max Randomness',
+};
 
 /**
  * Rotation algorithm: Each car races on each track exactly once.

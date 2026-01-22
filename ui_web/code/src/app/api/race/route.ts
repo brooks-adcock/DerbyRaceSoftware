@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Storage } from '@/lib/storage';
 import type { Heat, Lane, Race, RaceState } from '@/lib/storage';
+import { HEAT_ALGORITHMS, DEFAULT_ALGORITHM } from '@/lib/heatAlgorithms';
+import type { HeatAlgorithmKey } from '@/lib/heatAlgorithms';
 import os from 'os';
 
 export async function GET() {
@@ -88,27 +90,9 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'No cars with "REGISTERED" or "COURTESY" status found. Please check-in cars first.' }, { status: 400 });
       }
 
-      // Shuffle cars for randomness
-      const shuffled_cars = [...active_cars].sort(() => Math.random() - 0.5);
-      const n_cars = shuffled_cars.length;
-      const n_tracks = settings.n_tracks;
-      const n_heats = Math.max(n_cars, n_tracks);
-
-      const new_heats: Heat[] = [];
-      for (let h = 0; h < n_heats; h++) {
-        const lanes: Lane[] = [];
-        for (let t = 0; t < n_tracks; t++) {
-          const car_idx = (h + t) % n_heats;
-          lanes.push({
-            car_id: car_idx < n_cars ? shuffled_cars[car_idx].id : null,
-            time: null
-          });
-        }
-        new_heats.push({
-          id: h + 1,
-          lanes
-        });
-      }
+      const algorithm_key = (settings.heat_algorithm || DEFAULT_ALGORITHM) as HeatAlgorithmKey;
+      const algorithm = HEAT_ALGORITHMS[algorithm_key];
+      const new_heats = algorithm(active_cars, settings);
       
       race.heats = new_heats;
       race.current_heat_id = new_heats.length > 0 ? 1 : null;

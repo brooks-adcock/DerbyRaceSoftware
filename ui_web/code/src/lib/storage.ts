@@ -46,6 +46,7 @@ export interface RaceSettings {
   gate_up_val: number;
   gate_down_val: number;
   pi_url: string;  // URL to Pi hardware controller (e.g., "192.168.1.100:8000")
+  heat_algorithm?: 'rotation' | 'chaos';  // defaults to 'rotation'
   presentation?: {
     type: 'speed' | 'beauty';
     scout_level: string;

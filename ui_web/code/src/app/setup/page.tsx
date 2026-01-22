@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react'
 import { Container } from '@/components/container'
 import { Heading, Subheading } from '@/components/text'
 import { Button } from '@/components/button'
-import { RaceSettings } from '@/lib/storage'
+import type { RaceSettings } from '@/lib/storage'
+import { ALGORITHM_DISPLAY_NAMES } from '@/lib/heatAlgorithms'
+import type { HeatAlgorithmKey } from '@/lib/heatAlgorithms'
 import { usePiWebSocket, ConnectionState } from '@/lib/usePiWebSocket'
 import { ChevronLeftIcon, ChevronRightIcon, SignalIcon, SignalSlashIcon } from '@heroicons/react/24/solid'
 import clsx from 'clsx'
@@ -200,6 +202,21 @@ export default function SetupPage() {
               onChange={(e) => handleSaveSettings({ n_tracks: parseInt(e.target.value) })}
               className="mt-2 block w-full rounded-lg border border-gray-200 px-4 py-2 text-gray-950 focus:border-gray-950 focus:outline-none"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-950">Heat Generation Algorithm</label>
+            <select
+              value={settings.heat_algorithm || 'rotation'}
+              onChange={(e) => handleSaveSettings({ heat_algorithm: e.target.value as HeatAlgorithmKey })}
+              className="mt-2 block w-full rounded-lg border border-gray-200 px-4 py-2 text-gray-950 focus:border-gray-950 focus:outline-none"
+            >
+              {(Object.keys(ALGORITHM_DISPLAY_NAMES) as HeatAlgorithmKey[]).map((key) => (
+                <option key={key} value={key}>
+                  {ALGORITHM_DISPLAY_NAMES[key]}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Live Gate Status */}
