@@ -14,10 +14,11 @@ interface FilterState {
   search_query: string
   sort_key: keyof Car
   sort_order: 'asc' | 'desc'
-  show_orphans_only: boolean
   division_filter: string
   status_filter: RegistrationStatus | ''
 }
+
+const ORPHANED_FILTER = '__ORPHANED__'
 
 function loadFilters(): Partial<FilterState> {
   if (typeof window === 'undefined') return {}
@@ -41,7 +42,6 @@ export default function RegistrationListPage() {
   const [sort_key, set_sort_key] = useState<keyof Car>('id')
   const [sort_order, set_sort_order] = useState<'asc' | 'desc'>('asc')
   const [is_loading, set_is_loading] = useState(true)
-  const [show_orphans_only, set_show_orphans_only] = useState(false)
   const [division_filter, set_division_filter] = useState<string>('')
   const [status_filter, set_status_filter] = useState<RegistrationStatus | ''>('')
   const [is_filters_loaded, set_is_filters_loaded] = useState(false)
@@ -52,7 +52,6 @@ export default function RegistrationListPage() {
     if (saved.search_query !== undefined) set_search_query(saved.search_query)
     if (saved.sort_key !== undefined) set_sort_key(saved.sort_key)
     if (saved.sort_order !== undefined) set_sort_order(saved.sort_order)
-    if (saved.show_orphans_only !== undefined) set_show_orphans_only(saved.show_orphans_only)
     if (saved.division_filter !== undefined) set_division_filter(saved.division_filter)
     if (saved.status_filter !== undefined) set_status_filter(saved.status_filter)
     set_is_filters_loaded(true)
@@ -65,11 +64,10 @@ export default function RegistrationListPage() {
       search_query,
       sort_key,
       sort_order,
-      show_orphans_only,
       division_filter,
       status_filter,
     })
-  }, [search_query, sort_key, sort_order, show_orphans_only, division_filter, status_filter, is_filters_loaded])
+  }, [search_query, sort_key, sort_order, division_filter, status_filter, is_filters_loaded])
 
   useEffect(() => {
     Promise.all([
@@ -90,11 +88,9 @@ export default function RegistrationListPage() {
   const filtered_cars = cars.filter((car) => {
     const search_text = `${car.id} ${car.first_name} ${car.last_name} ${car.car_name} ${car.division}`.toLowerCase()
     const matches_search = search_text.includes(search_query.toLowerCase())
-    const matches_division = !division_filter || car.division === division_filter
+    const matches_division = !division_filter || 
+      (division_filter === ORPHANED_FILTER ? isOrphanedDivision(car.division) : car.division === division_filter)
     const matches_status = !status_filter || car.registration_status === status_filter
-    if (show_orphans_only) {
-      return matches_search && matches_division && matches_status && isOrphanedDivision(car.division)
-    }
     return matches_search && matches_division && matches_status
   })
 
@@ -128,21 +124,13 @@ export default function RegistrationListPage() {
         </div>
         {is_filters_loaded && (
           <div className="flex items-center gap-4">
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={show_orphans_only}
-                onChange={(e) => set_show_orphans_only(e.target.checked)}
-                className="size-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
-              />
-              <span className="text-gray-600">Show Orphaned Divisions</span>
-            </label>
             <select
               value={division_filter}
               onChange={(e) => set_division_filter(e.target.value)}
               className="rounded-lg border border-gray-200 py-2 px-3 text-sm focus:border-gray-950 focus:outline-none"
             >
               <option value="">All Divisions</option>
+              <option value={ORPHANED_FILTER}>Orphaned Only</option>
               {settings?.divisions?.map((d) => (
                 <option key={d} value={d}>{d}</option>
               ))}
