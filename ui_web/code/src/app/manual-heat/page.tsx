@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Container } from '@/components/container'
 import { Heading, Subheading } from '@/components/text'
 import { Button } from '@/components/button'
+import { Breadcrumb } from '@/components/breadcrumb'
 import { RaceSettings } from '@/lib/storage'
 
 export default function ManualHeatPage() {
@@ -30,6 +31,7 @@ export default function ManualHeatPage() {
 
   return (
     <Container className="py-24">
+      <Breadcrumb />
       <Subheading>Manual Control</Subheading>
       <Heading className="mt-2">Manual Heat</Heading>
 

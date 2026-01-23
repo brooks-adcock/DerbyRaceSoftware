@@ -4,12 +4,15 @@ import { useState, useEffect } from 'react'
 import { Container } from '@/components/container'
 import { Heading, Subheading } from '@/components/text'
 import { Button } from '@/components/button'
+import { Breadcrumb } from '@/components/breadcrumb'
 import type { RaceSettings } from '@/lib/storage'
 import { ALGORITHM_DISPLAY_NAMES } from '@/lib/heatAlgorithms'
 import type { HeatAlgorithmKey } from '@/lib/heatAlgorithms'
 import { usePiWebSocket, ConnectionState } from '@/lib/usePiWebSocket'
-import { ChevronLeftIcon, ChevronRightIcon, SignalIcon, SignalSlashIcon } from '@heroicons/react/24/solid'
+import { ChevronLeftIcon, ChevronRightIcon, SignalIcon, SignalSlashIcon, TrashIcon, PlusIcon, ExclamationTriangleIcon } from '@heroicons/react/24/solid'
+import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import clsx from 'clsx'
+import type { Car } from '@/lib/storage'
 
 function AngleCalibrator({ label, value, onChange, onTest }: { 
   label: string
@@ -89,10 +92,15 @@ export default function SetupPage() {
   const [up_angle, setUpAngle] = useState(60)
   const [down_angle, setDownAngle] = useState(0)
   const [calibration_loaded, setCalibrationLoaded] = useState(false)
+  const [cars, setCars] = useState<Car[]>([])
+  const [new_division, setNewDivision] = useState('')
+  const [is_adding_division, setIsAddingDivision] = useState(false)
+  const [delete_modal, setDeleteModal] = useState<{ division: string; reassign_to: string } | null>(null)
 
-  // Load settings on mount
+  // Load settings and cars on mount
   useEffect(() => {
     fetch('/api/settings').then(res => res.json()).then(setSettings)
+    fetch('/api/cars').then(res => res.json()).then(setCars)
   }, [])
 
   // Pi WebSocket connection
@@ -159,10 +167,56 @@ export default function SetupPage() {
     }
   }
 
+  const handleAddDivision = async () => {
+    if (!settings || !new_division.trim()) return
+    const updated_divisions = [...(settings.divisions || []), new_division.trim()]
+    await handleSaveSettings({ divisions: updated_divisions })
+    setNewDivision('')
+    setIsAddingDivision(false)
+  }
+
+  const handleDeleteDivision = (division: string) => {
+    if (!settings) return
+    const cars_in_division = cars.filter(c => c.division === division)
+    if (cars_in_division.length > 0) {
+      const other_divisions = (settings.divisions || []).filter(d => d !== division)
+      setDeleteModal({ division, reassign_to: other_divisions[0] || '' })
+    } else {
+      confirmDeleteDivision(division)
+    }
+  }
+
+  const confirmDeleteDivision = async (division: string, reassign_to?: string) => {
+    if (!settings) return
+    
+    // Reassign cars if needed
+    if (reassign_to) {
+      const updated_cars = cars.map(c => 
+        c.division === division ? { ...c, division: reassign_to } : c
+      )
+      for (const car of updated_cars.filter(c => c.division === reassign_to && cars.find(orig => orig.id === c.id)?.division === division)) {
+        await fetch(`/api/cars/${car.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ division: reassign_to }),
+        })
+      }
+      setCars(updated_cars)
+    }
+    
+    // Remove division from settings
+    const updated_divisions = (settings.divisions || []).filter(d => d !== division)
+    await handleSaveSettings({ divisions: updated_divisions })
+    setDeleteModal(null)
+  }
+
+  const getCarsInDivision = (division: string) => cars.filter(c => c.division === division).length
+
   if (!settings) return <Container className="py-24">Loading settings...</Container>
 
   return (
     <Container className="py-24">
+      <Breadcrumb />
       <Subheading>Configuration</Subheading>
       <Heading className="mt-2">Race Setup</Heading>
 
@@ -344,6 +398,105 @@ export default function SetupPage() {
           )}
         </section>
       </div>
+
+      {/* Divisions Management */}
+      <section className="mt-12">
+        <Subheading>Race Categories</Subheading>
+        <h3 className="mt-2 text-xl font-bold text-gray-950">Divisions</h3>
+        <p className="mt-1 text-sm text-gray-500">Manage the divisions available for car registration.</p>
+        
+        <div className="mt-6 space-y-2">
+          {(settings.divisions || []).map((division) => {
+            const car_count = getCarsInDivision(division)
+            return (
+              <div key={division} className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <span className="font-medium text-gray-950">{division}</span>
+                  {car_count > 0 && (
+                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+                      {car_count} car{car_count !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={() => handleDeleteDivision(division)}
+                  className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600"
+                >
+                  <TrashIcon className="size-4" />
+                </button>
+              </div>
+            )
+          })}
+          
+          {is_adding_division ? (
+            <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2">
+              <input
+                type="text"
+                value={new_division}
+                onChange={(e) => setNewDivision(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAddDivision()}
+                placeholder="New division name..."
+                autoFocus
+                className="flex-1 text-sm text-gray-950 focus:outline-none"
+              />
+              <Button onClick={handleAddDivision} disabled={!new_division.trim()}>Add</Button>
+              <Button variant="outline" onClick={() => { setIsAddingDivision(false); setNewDivision('') }}>Cancel</Button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setIsAddingDivision(true)}
+              className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-200 px-4 py-3 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+            >
+              <PlusIcon className="size-4" />
+              Add Division
+            </button>
+          )}
+        </div>
+      </section>
+
+      {/* Delete Division Modal */}
+      <Dialog open={delete_modal !== null} onClose={() => setDeleteModal(null)} className="relative z-50">
+        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <DialogPanel className="mx-auto max-w-md rounded-2xl bg-white p-8 shadow-2xl">
+            <div className="flex items-start gap-4">
+              <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-amber-100">
+                <ExclamationTriangleIcon className="size-6 text-amber-600" />
+              </div>
+              <div>
+                <DialogTitle className="text-lg font-bold text-gray-950">Reassign Cars</DialogTitle>
+                <p className="mt-2 text-sm text-gray-500">
+                  There are cars in the <span className="font-medium text-gray-950">{delete_modal?.division}</span> division. 
+                  Choose a division to reassign them to before deleting.
+                </p>
+              </div>
+            </div>
+            
+            <div className="mt-6">
+              <label className="block text-sm font-medium text-gray-950">Reassign to</label>
+              <select
+                value={delete_modal?.reassign_to || ''}
+                onChange={(e) => setDeleteModal(prev => prev ? { ...prev, reassign_to: e.target.value } : null)}
+                className="mt-2 block w-full rounded-lg border border-gray-200 px-4 py-2 text-gray-950 focus:border-gray-950 focus:outline-none"
+              >
+                {(settings.divisions || []).filter(d => d !== delete_modal?.division).map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="mt-8 flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setDeleteModal(null)}>Cancel</Button>
+              <Button 
+                onClick={() => delete_modal && confirmDeleteDivision(delete_modal.division, delete_modal.reassign_to)}
+                disabled={!delete_modal?.reassign_to}
+              >
+                Reassign & Delete
+              </Button>
+            </div>
+          </DialogPanel>
+        </div>
+      </Dialog>
     </Container>
   )
 }

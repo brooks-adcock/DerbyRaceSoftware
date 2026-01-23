@@ -15,7 +15,7 @@ function makeCars(n: number): Car[] {
       is_beauty: false,
       win_preference: 'speed',
       photo_hash: '',
-      scout_level: 'Tiger',
+      division: 'Boys: Lion/Tiger',
       registration_status: 'REGISTERED',
       weight_oz: 5.0,
       is_wheels_roll: true,
@@ -36,6 +36,7 @@ function makeSettings(n_tracks: number): RaceSettings {
     gate_up_val: 0,
     gate_down_val: 90,
     pi_url: '',
+    divisions: ['Boys: Lion/Tiger', 'Boys: Older Scouts', 'Boys: Family'],
   };
 }
 

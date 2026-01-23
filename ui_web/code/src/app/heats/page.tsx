@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react'
 import { Container } from '@/components/container'
 import { Heading, Subheading } from '@/components/text'
 import { Button } from '@/components/button'
+import { Breadcrumb } from '@/components/breadcrumb'
 import { CountdownOverlay } from '@/components/countdown-overlay'
-import type { RaceSettings, Race } from '@/lib/storage'
+import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
+import type { RaceSettings, Race, Car } from '@/lib/storage'
 
 // Heat control state machine: idle -> ready -> racing -> idle
 type HeatState = 'idle' | 'ready' | 'racing'
@@ -13,17 +15,22 @@ type HeatState = 'idle' | 'ready' | 'racing'
 export default function HeatsPage() {
   const [race, set_race] = useState<Race | null>(null)
   const [settings, set_settings] = useState<RaceSettings | null>(null)
+  const [cars, set_cars] = useState<Car[]>([])
   const [is_loading, set_is_loading] = useState(true)
   const [heat_state, set_heat_state] = useState<HeatState>('idle')
   const [countdown_end, set_countdown_end] = useState<number | null>(null)
+  const [is_generate_modal_open, set_is_generate_modal_open] = useState(false)
+  const [selected_divisions, set_selected_divisions] = useState<string[]>([])
 
   const fetchData = async () => {
-    const [race_data, settings_data] = await Promise.all([
+    const [race_data, settings_data, cars_data] = await Promise.all([
       fetch('/api/race').then(res => res.json()),
-      fetch('/api/settings').then(res => res.json())
+      fetch('/api/settings').then(res => res.json()),
+      fetch('/api/cars').then(res => res.json())
     ])
     set_race(race_data)
     set_settings(settings_data)
+    set_cars(cars_data)
     set_is_loading(false)
   }
 
@@ -33,14 +40,35 @@ export default function HeatsPage() {
     return () => clearInterval(interval)
   }, [])
 
+  const openGenerateModal = () => {
+    // Pre-select all divisions
+    set_selected_divisions(settings?.divisions || [])
+    set_is_generate_modal_open(true)
+  }
+
+  const toggleDivision = (division: string) => {
+    set_selected_divisions(prev => 
+      prev.includes(division) 
+        ? prev.filter(d => d !== division)
+        : [...prev, division]
+    )
+  }
+
+  const selectAllDivisions = () => set_selected_divisions(settings?.divisions || [])
+  const deselectAllDivisions = () => set_selected_divisions([])
+
+  const getActiveCarsInDivision = (division: string) => 
+    cars.filter(c => c.division === division && (c.registration_status === 'REGISTERED' || c.registration_status === 'COURTESY')).length
+
   const handleGenerateHeats = async () => {
     const response = await fetch('/api/race', {
       method: 'POST',
-      body: JSON.stringify({ action: 'generate_heats' }),
+      body: JSON.stringify({ action: 'generate_heats', divisions: selected_divisions }),
     })
     const data = await response.json()
     set_race(data)
     set_heat_state('idle')
+    set_is_generate_modal_open(false)
   }
 
   // Step 1: Ready Heat - raise the gate
@@ -162,6 +190,7 @@ export default function HeatsPage() {
   return (
     <Container className="py-24">
       <CountdownOverlay countdown_end={countdown_end} />
+      <Breadcrumb />
       <div className="flex items-end justify-between">
         <div>
           <Subheading>Race Control</Subheading>
@@ -169,7 +198,7 @@ export default function HeatsPage() {
         </div>
         <div className="flex gap-4">
           <Button variant="outline" href="/manual-heat">Manual Heat</Button>
-          <Button onClick={handleGenerateHeats}>Generate Heats</Button>
+          <Button onClick={openGenerateModal}>Generate Heats</Button>
         </div>
       </div>
 
@@ -319,6 +348,53 @@ export default function HeatsPage() {
         </div>
       )}
 
+      {/* Generate Heats Modal */}
+      <Dialog open={is_generate_modal_open} onClose={() => set_is_generate_modal_open(false)} className="relative z-50">
+        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <DialogPanel className="mx-auto max-w-lg w-full rounded-2xl bg-white p-8 shadow-2xl">
+            <DialogTitle className="text-xl font-bold text-gray-950">Select Divisions for Heat Generation</DialogTitle>
+            <p className="mt-2 text-sm text-gray-500">Choose which divisions to include in the heat schedule.</p>
+            
+            <div className="mt-4 flex gap-2">
+              <Button variant="outline" onClick={selectAllDivisions} className="text-xs">Select All</Button>
+              <Button variant="outline" onClick={deselectAllDivisions} className="text-xs">Deselect All</Button>
+            </div>
+            
+            <div className="mt-6 space-y-2 max-h-80 overflow-y-auto">
+              {(settings?.divisions || []).map((division) => {
+                const car_count = getActiveCarsInDivision(division)
+                return (
+                  <label key={division} className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3 cursor-pointer hover:bg-gray-50">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={selected_divisions.includes(division)}
+                        onChange={() => toggleDivision(division)}
+                        className="size-4 rounded border-gray-300 text-gray-950 focus:ring-gray-950"
+                      />
+                      <span className="font-medium text-gray-950">{division}</span>
+                    </div>
+                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+                      {car_count} car{car_count !== 1 ? 's' : ''}
+                    </span>
+                  </label>
+                )
+              })}
+            </div>
+            
+            <div className="mt-8 flex justify-end gap-3">
+              <Button variant="outline" onClick={() => set_is_generate_modal_open(false)}>Cancel</Button>
+              <Button 
+                onClick={handleGenerateHeats}
+                disabled={selected_divisions.length === 0}
+              >
+                Generate Heats
+              </Button>
+            </div>
+          </DialogPanel>
+        </div>
+      </Dialog>
     </Container>
   )
 }

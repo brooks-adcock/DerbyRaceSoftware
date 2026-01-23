@@ -119,7 +119,7 @@ export default function Home() {
                      "You're In!"}
                   </span>
                 </div>
-                <p className="mt-1 text-sm text-gray-500">{car.scout_level} Level</p>
+                <p className="mt-1 text-sm text-gray-500">{car.division}</p>
                 
                 <div className="mt-6 grid grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1">

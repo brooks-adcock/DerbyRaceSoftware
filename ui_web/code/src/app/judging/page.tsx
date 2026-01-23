@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Container } from '@/components/container'
 import { Heading, Subheading } from '@/components/text'
+import { Breadcrumb } from '@/components/breadcrumb'
 import { Car } from '@/lib/storage'
 import Image from 'next/image'
 
@@ -41,6 +42,7 @@ export default function JudgingPage() {
 
   return (
     <Container className="py-24">
+      <Breadcrumb />
       <Subheading>Judging</Subheading>
       <Heading className="mt-2">Beauty Class Scoring</Heading>
 

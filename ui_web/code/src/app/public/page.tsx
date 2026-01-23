@@ -194,101 +194,50 @@ export default function PublicPage() {
   }
 
   if (settings?.presentation?.is_visible && race.state !== 'RACING') {
-    const level = settings.presentation.scout_level
-    const type = settings.presentation.type
-    
-    const results = Object.values(cars)
-      .filter(c => {
-        if (level !== 'Overall' && c.scout_level !== level) return false
-        if (type === 'speed') return (c.average_time || 0) > 0
-        return c.beauty_scores.length > 0
-      })
-      .sort((a, b) => {
-        if (type === 'speed') {
-          return (a.average_time || 999) - (b.average_time || 999)
-        } else {
-          const a_avg = a.beauty_scores.length > 0 ? a.beauty_scores.reduce((sum, s) => sum + s, 0) / a.beauty_scores.length : 0
-          const b_avg = b.beauty_scores.length > 0 ? b.beauty_scores.reduce((sum, s) => sum + s, 0) / b.beauty_scores.length : 0
-          return b_avg - a_avg
-        }
-      })
-      .slice(0, 3)
+    const prize_name = settings.presentation.prize_name
+    const winner_id = settings.presentation.winner_car_id
+    const winner = winner_id ? cars[winner_id] : null
+
+    if (!winner) {
+      return (
+        <div className="flex h-screen items-center justify-center bg-black text-white">
+          <div className="text-4xl font-bold animate-pulse">Loading winner...</div>
+        </div>
+      )
+    }
 
     return (
       <div className="relative min-h-screen flex flex-col items-center justify-center bg-black text-white p-12 overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(37,99,235,0.1),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(250,204,21,0.1),transparent_50%)]" />
         
-        <div className="relative z-10 w-full max-w-7xl text-center space-y-16">
-          <div className="space-y-4">
-            <h1 className="text-4xl md:text-6xl font-black tracking-[0.2em] text-blue-600 uppercase italic">
-              {level} Results
-            </h1>
-            <div className="text-xl md:text-2xl font-bold text-gray-500 uppercase tracking-widest">
-              {type === 'speed' ? 'Fastest Cars' : 'Best in Show'}
+        <div className="relative z-10 w-full max-w-4xl text-center space-y-12">
+          {/* Prize Name */}
+          <div className="inline-block px-12 py-6 rounded-full bg-yellow-400 text-black text-3xl md:text-4xl font-black italic uppercase tracking-tighter shadow-[0_0_60px_rgba(250,204,21,0.5)]">
+            {prize_name}
+          </div>
+
+          {/* Winner Photo */}
+          <div className="flex justify-center">
+            <div className="relative size-72 md:size-[28rem] rounded-[48px] overflow-hidden ring-8 ring-yellow-400 shadow-[0_0_100px_rgba(250,204,21,0.3)]">
+              {winner.photo_hash ? (
+                <Image src={`/photos/${winner.photo_hash}.jpg`} alt={winner.car_name} fill className="object-cover" />
+              ) : (
+                <div className="flex h-full items-center justify-center bg-gray-900 text-8xl font-black text-white/5">?</div>
+              )}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-end">
-            {/* 2nd Place */}
-            {results[1] && (
-              <div className="flex flex-col items-center gap-6 order-2 md:order-1">
-                <div className="relative size-48 md:size-64 rounded-3xl overflow-hidden ring-4 ring-gray-400/30">
-                  {results[1].photo_hash ? (
-                    <Image src={`/photos/${results[1].photo_hash}.jpg`} alt={results[1].car_name} fill className="object-cover" />
-                  ) : (
-                    <div className="flex h-full items-center justify-center bg-gray-900 text-6xl font-black text-white/5">?</div>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <div className="text-2xl font-black">#{results[1].id} {results[1].car_name}</div>
-                  <div className="text-sm font-bold text-gray-500 uppercase">{results[1].first_name} {results[1].last_name}</div>
-                  <div className="space-y-1">
-                    <div className="inline-block px-6 py-2 rounded-full bg-gray-400 text-black font-black italic uppercase tracking-tighter">2nd Place</div>
-                    {type === 'speed' && <div className="text-xl font-mono text-gray-400 font-black tracking-tighter">{results[1].average_time?.toFixed(4)}s</div>}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* 1st Place */}
-            {results[0] && (
-              <div className="flex flex-col items-center gap-8 order-1 md:order-2 pb-12">
-                <div className="relative size-64 md:size-96 rounded-[48px] overflow-hidden ring-8 ring-yellow-400 shadow-[0_0_100px_rgba(250,204,21,0.2)]">
-                  {results[0].photo_hash ? (
-                    <Image src={`/photos/${results[0].photo_hash}.jpg`} alt={results[0].car_name} fill className="object-cover" />
-                  ) : (
-                    <div className="flex h-full items-center justify-center bg-gray-900 text-8xl font-black text-white/5">?</div>
-                  )}
-                </div>
-                <div className="space-y-3">
-                  <div className="text-4xl md:text-5xl font-black tracking-tighter italic">#{results[0].id} {results[0].car_name}</div>
-                  <div className="text-xl font-bold text-gray-400 uppercase">{results[0].first_name} {results[0].last_name}</div>
-                  <div className="space-y-2">
-                    <div className="inline-block px-12 py-4 rounded-full bg-yellow-400 text-black text-2xl font-black italic uppercase tracking-tighter shadow-[0_0_30px_rgba(250,204,21,0.4)]">1st Place</div>
-                    {type === 'speed' && <div className="text-3xl font-mono text-yellow-400/80 font-black tracking-tighter">{results[0].average_time?.toFixed(4)}s</div>}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* 3rd Place */}
-            {results[2] && (
-              <div className="flex flex-col items-center gap-6 order-3">
-                <div className="relative size-40 md:size-56 rounded-3xl overflow-hidden ring-4 ring-orange-400/30">
-                  {results[2].photo_hash ? (
-                    <Image src={`/photos/${results[2].photo_hash}.jpg`} alt={results[2].car_name} fill className="object-cover" />
-                  ) : (
-                    <div className="flex h-full items-center justify-center bg-gray-900 text-6xl font-black text-white/5">?</div>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <div className="text-xl font-black">#{results[2].id} {results[2].car_name}</div>
-                  <div className="text-sm font-bold text-gray-500 uppercase">{results[2].first_name} {results[2].last_name}</div>
-                  <div className="space-y-1">
-                    <div className="inline-block px-6 py-2 rounded-full bg-orange-400 text-black font-black italic uppercase tracking-tighter">3rd Place</div>
-                    {type === 'speed' && <div className="text-xl font-mono text-orange-400/50 font-black tracking-tighter">{results[2].average_time?.toFixed(4)}s</div>}
-                  </div>
-                </div>
+          {/* Winner Info */}
+          <div className="space-y-4">
+            <div className="text-5xl md:text-7xl font-black tracking-tighter italic">
+              #{winner.id} {winner.car_name}
+            </div>
+            <div className="text-2xl md:text-3xl font-bold text-gray-400 uppercase">
+              {winner.first_name} {winner.last_name}
+            </div>
+            {winner.average_time && (
+              <div className="text-4xl font-mono text-yellow-400/80 font-black tracking-tighter">
+                {winner.average_time.toFixed(4)}s
               </div>
             )}
           </div>

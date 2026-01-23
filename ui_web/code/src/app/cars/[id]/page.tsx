@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react'
 import { Container } from '@/components/container'
 import { Heading, Subheading } from '@/components/text'
 import { Button } from '@/components/button'
-import { Car, RegistrationStatus, TrackTime } from '@/lib/storage'
+import { Breadcrumb } from '@/components/breadcrumb'
+import { Car, RegistrationStatus, TrackTime, RaceSettings } from '@/lib/storage'
+import { DivisionSelect } from '@/components/division-select'
 import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
 
@@ -12,18 +14,21 @@ export default function CarAdminPage() {
   const { id } = useParams()
   const router = useRouter()
   const [car, set_car] = useState<Car | null>(null)
+  const [settings, set_settings] = useState<RaceSettings | null>(null)
   const [is_loading, set_is_loading] = useState(true)
   const [weight_input, set_weight_input] = useState('')
   const [weight_unit, set_weight_unit] = useState<'oz' | 'g'>('oz')
 
   useEffect(() => {
-    fetch(`/api/cars/${id}`)
-      .then((res) => res.json())
-      .then((data) => {
-        set_car(data)
-        set_weight_input(data.weight_oz.toString())
-        set_is_loading(false)
-      })
+    Promise.all([
+      fetch(`/api/cars/${id}`).then(res => res.json()),
+      fetch('/api/settings').then(res => res.json())
+    ]).then(([car_data, settings_data]) => {
+      set_car(car_data)
+      set_settings(settings_data)
+      set_weight_input(car_data.weight_oz.toString())
+      set_is_loading(false)
+    })
   }, [id])
 
   if (is_loading) return <Container className="py-24">Loading...</Container>
@@ -71,6 +76,7 @@ export default function CarAdminPage() {
 
   return (
     <Container className="py-24">
+      <Breadcrumb href="/registration" label="Registration List" />
       <div className="flex flex-col gap-12 lg:flex-row">
         <div className="lg:w-1/3">
           <Subheading>Admin Control</Subheading>
@@ -98,7 +104,7 @@ export default function CarAdminPage() {
               <div className="mt-2 text-xl font-bold text-gray-950">
                 {car.first_name} {car.last_name}
               </div>
-              <div className="mt-1 text-sm text-gray-500 font-medium">{car.scout_level} Level</div>
+              <div className="mt-1 text-sm text-gray-500 font-medium">{car.division}</div>
             </div>
           </div>
         </div>
@@ -218,16 +224,13 @@ export default function CarAdminPage() {
                 </div>
 
                 <div className="rounded-xl border border-gray-200 p-6">
-                  <label className="block text-sm font-medium text-gray-950">Category</label>
-                  <select
-                    value={car.scout_level}
-                    onChange={(e) => handleUpdate({ scout_level: e.target.value })}
-                    className="mt-2 block w-full rounded-lg border border-gray-200 px-4 py-2 text-sm font-bold text-gray-950 focus:border-gray-950 focus:outline-none shadow-sm"
-                  >
-                    <option value="Lion/Tiger">Lion/Tiger</option>
-                    <option value="Older Scouts">Older Scouts</option>
-                    <option value="Family">Family</option>
-                  </select>
+                  <label className="block text-sm font-medium text-gray-950">Division</label>
+                  <DivisionSelect
+                    value={car.division || ''}
+                    divisions={settings?.divisions || []}
+                    onChange={(value) => handleUpdate({ division: value })}
+                    className="mt-2 text-sm font-bold shadow-sm"
+                  />
                 </div>
               </div>
             </div>

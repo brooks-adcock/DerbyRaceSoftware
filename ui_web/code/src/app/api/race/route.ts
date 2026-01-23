@@ -82,12 +82,18 @@ export async function POST(request: NextRequest) {
     }
 
     if (body.action === 'generate_heats') {
+      const { divisions } = body;
       const cars = await Storage.getCars();
       const settings = await Storage.getSettings();
-      const active_cars = cars.filter(c => c.registration_status === 'REGISTERED' || c.registration_status === 'COURTESY');
+      let active_cars = cars.filter(c => c.registration_status === 'REGISTERED' || c.registration_status === 'COURTESY');
+      
+      // Filter by divisions if provided
+      if (divisions && divisions.length > 0) {
+        active_cars = active_cars.filter(c => divisions.includes(c.division));
+      }
       
       if (active_cars.length === 0) {
-        return NextResponse.json({ error: 'No cars with "REGISTERED" or "COURTESY" status found. Please check-in cars first.' }, { status: 400 });
+        return NextResponse.json({ error: 'No cars with "REGISTERED" or "COURTESY" status found in selected divisions. Please check-in cars first.' }, { status: 400 });
       }
 
       const algorithm_key = (settings.heat_algorithm || DEFAULT_ALGORITHM) as HeatAlgorithmKey;

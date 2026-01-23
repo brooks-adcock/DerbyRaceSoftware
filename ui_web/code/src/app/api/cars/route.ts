@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     const car_name = form_data.get('car_name') as string;
     const is_beauty = form_data.get('is_beauty') === 'true';
     const win_preference = form_data.get('win_preference') as 'beauty' | 'speed';
-    const scout_level = form_data.get('scout_level') as string;
+    const division = form_data.get('division') as string;
     const photo_file = form_data.get('photo') as File | null;
 
     let photo_hash = '';
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
       is_beauty,
       win_preference,
       photo_hash,
-      scout_level,
+      division,
       registration_status: 'STARTED',
       weight_oz: 0,
       is_wheels_roll: false,

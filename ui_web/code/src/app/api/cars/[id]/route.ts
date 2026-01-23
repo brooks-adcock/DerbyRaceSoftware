@@ -29,7 +29,7 @@ export async function PATCH(
       const car_name = form_data.get('car_name') as string;
       const is_beauty = form_data.get('is_beauty') === 'true';
       const win_preference = form_data.get('win_preference') as 'beauty' | 'speed';
-      const scout_level = form_data.get('scout_level') as string;
+      const division = form_data.get('division') as string;
       const photo_file = form_data.get('photo') as File | null;
 
       updates = {
@@ -38,7 +38,7 @@ export async function PATCH(
         car_name: car_name || undefined,
         is_beauty: form_data.has('is_beauty') ? is_beauty : undefined,
         win_preference: (win_preference as any) || undefined,
-        scout_level: scout_level || undefined,
+        division: division || undefined,
       };
 
       if (photo_file && photo_file.size > 0) {

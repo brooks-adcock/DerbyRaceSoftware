@@ -4,10 +4,10 @@ import { useState, useEffect, Suspense } from 'react'
 import { Container } from '@/components/container'
 import { Heading, Subheading } from '@/components/text'
 import { Button } from '@/components/button'
+import { Breadcrumb } from '@/components/breadcrumb'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Car } from '@/lib/storage'
-
-const SCOUT_LEVELS = ['Lion/Tiger', 'Older Scouts', 'Family']
+import { Car, RaceSettings } from '@/lib/storage'
+import { DivisionSelect } from '@/components/division-select'
 
 function RegisterForm() {
   const router = useRouter()
@@ -19,7 +19,8 @@ function RegisterForm() {
   const [car_name, set_car_name] = useState('')
   const [is_beauty, set_is_beauty] = useState(false)
   const [win_preference, set_win_preference] = useState<'beauty' | 'speed'>('speed')
-  const [scout_level, set_scout_level] = useState('Lion/Tiger')
+  const [division, set_division] = useState('')
+  const [divisions, set_divisions] = useState<string[]>([])
   const [photo, set_photo] = useState<File | null>(null)
   const [existing_photo_hash, set_existing_photo_hash] = useState('')
   const [is_submitting, set_is_submitting] = useState(false)
@@ -29,9 +30,14 @@ function RegisterForm() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const race_res = await fetch('/api/race')
+        const [race_res, settings_res] = await Promise.all([
+          fetch('/api/race'),
+          fetch('/api/settings')
+        ])
         const race_data = await race_res.json()
+        const settings_data: RaceSettings = await settings_res.json()
         set_race_state(race_data.state)
+        set_divisions(settings_data.divisions || [])
 
         if (edit_id) {
           const car_res = await fetch(`/api/cars/${edit_id}`)
@@ -42,7 +48,7 @@ function RegisterForm() {
             set_car_name(car_data.car_name)
             set_is_beauty(car_data.is_beauty)
             set_win_preference(car_data.win_preference)
-            set_scout_level(car_data.scout_level)
+            set_division(car_data.division || '')
             set_existing_photo_hash(car_data.photo_hash)
           }
         }
@@ -70,7 +76,7 @@ function RegisterForm() {
     form_data.append('car_name', car_name)
     form_data.append('is_beauty', String(is_beauty))
     form_data.append('win_preference', win_preference)
-    form_data.append('scout_level', scout_level)
+    form_data.append('division', division)
     if (photo) {
       form_data.append('photo', photo)
     }
@@ -122,6 +128,7 @@ function RegisterForm() {
 
   return (
     <Container className="py-24">
+      <Breadcrumb href="/" label="My Registrations" />
       <Subheading>{edit_id ? 'Edit Registration' : 'Registration'}</Subheading>
       <Heading className="mt-2">{edit_id ? `Editing Car #${edit_id}` : 'Enter Your Car Details'}</Heading>
 
@@ -170,21 +177,17 @@ function RegisterForm() {
         </div>
 
         <div>
-          <label htmlFor="scout_level" className="block text-sm font-medium text-gray-950">
-            Cub Scout Level
+          <label htmlFor="division" className="block text-sm font-medium text-gray-950">
+            Division
           </label>
-          <select
-            id="scout_level"
-            value={scout_level}
-            onChange={(e) => set_scout_level(e.target.value)}
-            className="mt-2 block w-full rounded-lg border border-gray-200 px-4 py-2 text-gray-950 focus:border-gray-950 focus:outline-none"
-          >
-            {SCOUT_LEVELS.map((level) => (
-              <option key={level} value={level}>
-                {level}
-              </option>
-            ))}
-          </select>
+          <DivisionSelect
+            id="division"
+            required
+            value={division}
+            divisions={divisions}
+            onChange={set_division}
+            className="mt-2"
+          />
         </div>
 
         <div className="flex items-center gap-3">

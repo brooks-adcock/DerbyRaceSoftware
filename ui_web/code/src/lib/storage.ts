@@ -24,7 +24,7 @@ export interface Car {
   is_beauty: boolean;
   win_preference: 'beauty' | 'speed';
   photo_hash: string;
-  scout_level: string;
+  division: string;
   registration_status: RegistrationStatus;
   weight_oz: number;
   is_wheels_roll: boolean;
@@ -47,9 +47,10 @@ export interface RaceSettings {
   gate_down_val: number;
   pi_url: string;  // URL to Pi hardware controller (e.g., "192.168.1.100:8000")
   heat_algorithm?: 'rotation' | 'chaos';  // defaults to 'rotation'
+  divisions: string[];
   presentation?: {
-    type: 'speed' | 'beauty';
-    scout_level: string;
+    prize_name: string;
+    winner_car_id: number;
     is_visible: boolean;
   };
 }
@@ -110,6 +111,16 @@ export const Storage = {
       gate_up_val: 0,
       gate_down_val: 1,
       pi_url: '',
+      divisions: [
+        "Girls: Family",
+        "Girls: Daisy",
+        "Girls: Brownie",
+        "Girls: Junior",
+        "Girls: Cadette",
+        "Boys: Family",
+        "Boys: Lion/Tiger",
+        "Boys: Older Scouts"
+      ],
     });
   },
 
