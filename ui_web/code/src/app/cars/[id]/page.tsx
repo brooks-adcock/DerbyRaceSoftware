@@ -209,7 +209,7 @@ export default function CarAdminPage() {
                 </div>
                 
                 <div className="pt-4 mt-4 border-t border-gray-200">
-                  <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Speed Only Requirements</div>
+                  <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Speed-Only Requirements</div>
                 <div className="flex items-center gap-3">
                   <input
                     type="checkbox"
