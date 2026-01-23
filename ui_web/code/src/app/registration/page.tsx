@@ -5,8 +5,34 @@ import { Container } from '@/components/container'
 import { Heading, Subheading } from '@/components/text'
 import { Link } from '@/components/link'
 import { Breadcrumb } from '@/components/breadcrumb'
-import { Car, RaceSettings } from '@/lib/storage'
+import { Car, RaceSettings, RegistrationStatus } from '@/lib/storage'
 import { MagnifyingGlassIcon, ExclamationTriangleIcon } from '@heroicons/react/20/solid'
+
+const STORAGE_KEY = 'registration_list_filters'
+
+interface FilterState {
+  search_query: string
+  sort_key: keyof Car
+  sort_order: 'asc' | 'desc'
+  show_orphans_only: boolean
+  division_filter: string
+  status_filter: RegistrationStatus | ''
+}
+
+function loadFilters(): Partial<FilterState> {
+  if (typeof window === 'undefined') return {}
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    return saved ? JSON.parse(saved) : {}
+  } catch {
+    return {}
+  }
+}
+
+function saveFilters(filters: FilterState) {
+  if (typeof window === 'undefined') return
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(filters))
+}
 
 export default function RegistrationListPage() {
   const [cars, set_cars] = useState<Car[]>([])
@@ -16,6 +42,34 @@ export default function RegistrationListPage() {
   const [sort_order, set_sort_order] = useState<'asc' | 'desc'>('asc')
   const [is_loading, set_is_loading] = useState(true)
   const [show_orphans_only, set_show_orphans_only] = useState(false)
+  const [division_filter, set_division_filter] = useState<string>('')
+  const [status_filter, set_status_filter] = useState<RegistrationStatus | ''>('')
+  const [is_filters_loaded, set_is_filters_loaded] = useState(false)
+
+  // Load filters from localStorage on mount
+  useEffect(() => {
+    const saved = loadFilters()
+    if (saved.search_query !== undefined) set_search_query(saved.search_query)
+    if (saved.sort_key !== undefined) set_sort_key(saved.sort_key)
+    if (saved.sort_order !== undefined) set_sort_order(saved.sort_order)
+    if (saved.show_orphans_only !== undefined) set_show_orphans_only(saved.show_orphans_only)
+    if (saved.division_filter !== undefined) set_division_filter(saved.division_filter)
+    if (saved.status_filter !== undefined) set_status_filter(saved.status_filter)
+    set_is_filters_loaded(true)
+  }, [])
+
+  // Save filters to localStorage when they change
+  useEffect(() => {
+    if (!is_filters_loaded) return
+    saveFilters({
+      search_query,
+      sort_key,
+      sort_order,
+      show_orphans_only,
+      division_filter,
+      status_filter,
+    })
+  }, [search_query, sort_key, sort_order, show_orphans_only, division_filter, status_filter, is_filters_loaded])
 
   useEffect(() => {
     Promise.all([
@@ -36,10 +90,12 @@ export default function RegistrationListPage() {
   const filtered_cars = cars.filter((car) => {
     const search_text = `${car.id} ${car.first_name} ${car.last_name} ${car.car_name} ${car.division}`.toLowerCase()
     const matches_search = search_text.includes(search_query.toLowerCase())
+    const matches_division = !division_filter || car.division === division_filter
+    const matches_status = !status_filter || car.registration_status === status_filter
     if (show_orphans_only) {
-      return matches_search && isOrphanedDivision(car.division)
+      return matches_search && matches_division && matches_status && isOrphanedDivision(car.division)
     }
-    return matches_search
+    return matches_search && matches_division && matches_status
   })
 
   const sorted_cars = [...filtered_cars].sort((a, b) => {
@@ -70,27 +126,51 @@ export default function RegistrationListPage() {
           <Subheading>Admin</Subheading>
           <Heading className="mt-2">Registration List</Heading>
         </div>
-        <div className="flex items-center gap-4">
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={show_orphans_only}
-              onChange={(e) => set_show_orphans_only(e.target.checked)}
-              className="size-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
-            />
-            <span className="text-gray-600">Show Orphaned Divisions</span>
-          </label>
-          <div className="relative">
-            <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search cars..."
-              value={search_query}
-              onChange={(e) => set_search_query(e.target.value)}
-              className="rounded-lg border border-gray-200 py-2 pl-10 pr-4 text-sm focus:border-gray-950 focus:outline-none"
-            />
+        {is_filters_loaded && (
+          <div className="flex items-center gap-4">
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={show_orphans_only}
+                onChange={(e) => set_show_orphans_only(e.target.checked)}
+                className="size-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+              />
+              <span className="text-gray-600">Show Orphaned Divisions</span>
+            </label>
+            <select
+              value={division_filter}
+              onChange={(e) => set_division_filter(e.target.value)}
+              className="rounded-lg border border-gray-200 py-2 px-3 text-sm focus:border-gray-950 focus:outline-none"
+            >
+              <option value="">All Divisions</option>
+              {settings?.divisions?.map((d) => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+            <select
+              value={status_filter}
+              onChange={(e) => set_status_filter(e.target.value as RegistrationStatus | '')}
+              className="rounded-lg border border-gray-200 py-2 px-3 text-sm focus:border-gray-950 focus:outline-none"
+            >
+              <option value="">All Statuses</option>
+              <option value="STARTED">Reg. Started</option>
+              <option value="REVIEW">Under Review</option>
+              <option value="REGISTERED">Registered</option>
+              <option value="DISQUALIFIED">Disqualified</option>
+              <option value="COURTESY">Courtesy Run</option>
+            </select>
+            <div className="relative">
+              <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search cars..."
+                value={search_query}
+                onChange={(e) => set_search_query(e.target.value)}
+                className="rounded-lg border border-gray-200 py-2 pl-10 pr-4 text-sm focus:border-gray-950 focus:outline-none"
+              />
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <div className="mt-12 overflow-x-auto">
