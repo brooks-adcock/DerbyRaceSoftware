@@ -10,6 +10,8 @@ import { validateCarLanes, formatLaneIssues } from '@/lib/validation'
 import { DivisionSelect } from '@/components/division-select'
 import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
+import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
+import { InformationCircleIcon, XMarkIcon } from '@heroicons/react/24/outline'
 
 export default function CarAdminPage() {
   const { id } = useParams()
@@ -20,6 +22,7 @@ export default function CarAdminPage() {
   const [is_loading, set_is_loading] = useState(true)
   const [weight_input, set_weight_input] = useState('')
   const [weight_unit, set_weight_unit] = useState<'oz' | 'g'>('oz')
+  const [is_axle_modal_open, set_is_axle_modal_open] = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -192,6 +195,102 @@ export default function CarAdminPage() {
                     No loose parts
                   </label>
                 </div>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="flat_region_front"
+                    checked={car.is_flat_region_front ?? false}
+                    onChange={(e) => handleUpdate({ is_flat_region_front: e.target.checked })}
+                    className="size-4 rounded border-gray-300 text-gray-950 focus:ring-gray-950"
+                  />
+                  <label htmlFor="flat_region_front" className="text-sm font-medium text-gray-950">
+                    1/4" flat region at the front of the car
+                  </label>
+                </div>
+                
+                <div className="pt-4 mt-4 border-t border-gray-200">
+                  <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Speed Only Requirements</div>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="axles_precut_slots"
+                    checked={car.is_axles_precut_slots ?? false}
+                    onChange={(e) => handleUpdate({ is_axles_precut_slots: e.target.checked })}
+                    className="size-4 rounded border-gray-300 text-gray-950 focus:ring-gray-950"
+                  />
+                  <label htmlFor="axles_precut_slots" className="text-sm font-medium text-gray-950">
+                    Axles use pre-cut slots
+                  </label>
+                </div>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="axles_wheels_bsa"
+                    checked={car.is_axles_wheels_bsa ?? false}
+                    onChange={(e) => handleUpdate({ is_axles_wheels_bsa: e.target.checked })}
+                    className="size-4 rounded border-gray-300 text-gray-950 focus:ring-gray-950"
+                  />
+                  <label htmlFor="axles_wheels_bsa" className="text-sm font-medium text-gray-950 flex items-center gap-2">
+                    Axles and wheels are BSA
+                    <button
+                      type="button"
+                      onClick={() => set_is_axle_modal_open(true)}
+                      className="text-gray-400 hover:text-gray-600 transition-colors"
+                      aria-label="Show axle information"
+                    >
+                      <InformationCircleIcon className="size-4" />
+                    </button>
+                  </label>
+                </div>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="wheel_diameter_pass"
+                    checked={car.is_wheel_diameter_pass ?? false}
+                    onChange={(e) => handleUpdate({ is_wheel_diameter_pass: e.target.checked })}
+                    className="size-4 rounded border-gray-300 text-gray-950 focus:ring-gray-950"
+                  />
+                  <label htmlFor="wheel_diameter_pass" className="text-sm font-medium text-gray-950">
+                    Wheel diameter &gt;=1.155"
+                  </label>
+                </div>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="dry_powder_lubricant"
+                    checked={car.is_dry_powder_lubricant ?? false}
+                    onChange={(e) => handleUpdate({ is_dry_powder_lubricant: e.target.checked })}
+                    className="size-4 rounded border-gray-300 text-gray-950 focus:ring-gray-950"
+                  />
+                  <label htmlFor="dry_powder_lubricant" className="text-sm font-medium text-gray-950">
+                    Dry powder lubricant only
+                  </label>
+                </div>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="no_propulsion"
+                    checked={car.is_no_propulsion ?? false}
+                    onChange={(e) => handleUpdate({ is_no_propulsion: e.target.checked })}
+                    className="size-4 rounded border-gray-300 text-gray-950 focus:ring-gray-950"
+                  />
+                  <label htmlFor="no_propulsion" className="text-sm font-medium text-gray-950">
+                    No propulsion
+                  </label>
+                </div>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="no_magnets_glue_front"
+                    checked={car.is_no_magnets_glue_front ?? false}
+                    onChange={(e) => handleUpdate({ is_no_magnets_glue_front: e.target.checked })}
+                    className="size-4 rounded border-gray-300 text-gray-950 focus:ring-gray-950"
+                  />
+                  <label htmlFor="no_magnets_glue_front" className="text-sm font-medium text-gray-950">
+                    No magnets/glue on front
+                  </label>
+                </div>
+                </div>
               </div>
 
               {/* Right Column: Weight and Status */}
@@ -225,6 +324,7 @@ export default function CarAdminPage() {
                     onChange={(e) => handleUpdate({ registration_status: e.target.value as RegistrationStatus })}
                     className={`mt-2 block w-full rounded-lg border px-4 py-2 text-sm font-bold focus:outline-none shadow-sm transition-colors ${
                       car.registration_status === 'REGISTERED' ? 'border-green-200 bg-green-50 text-green-700' :
+                      car.registration_status === 'REGISTERED_BEAUTY' ? 'border-teal-200 bg-teal-50 text-teal-700' :
                       car.registration_status === 'REVIEW' ? 'border-blue-200 bg-blue-50 text-blue-700' :
                       car.registration_status === 'DISQUALIFIED' ? 'border-red-200 bg-red-50 text-red-700' :
                       car.registration_status === 'COURTESY' ? 'border-purple-200 bg-purple-50 text-purple-700' :
@@ -234,6 +334,7 @@ export default function CarAdminPage() {
                     <option value="STARTED">Registration Started</option>
                     <option value="REVIEW">Under Review</option>
                     <option value="REGISTERED">Fully Registered</option>
+                    <option value="REGISTERED_BEAUTY">Fully Registered - Beauty</option>
                     <option value="COURTESY">Courtesy Run (No Score)</option>
                     <option value="DISQUALIFIED">Disqualified</option>
                   </select>
@@ -444,6 +545,75 @@ export default function CarAdminPage() {
           </section>
         </div>
       </div>
+
+      {/* Axle Comparison Modal */}
+      <Dialog open={is_axle_modal_open} onClose={() => set_is_axle_modal_open(false)} className="relative z-50">
+        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <DialogPanel className="mx-auto max-w-4xl w-full rounded-2xl bg-white p-8 shadow-2xl">
+            <div className="flex items-center justify-between mb-6">
+              <DialogTitle className="text-xl font-bold text-gray-950">BSA vs Machined Axles</DialogTitle>
+              <button
+                onClick={() => set_is_axle_modal_open(false)}
+                className="rounded-full p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                aria-label="Close"
+              >
+                <XMarkIcon className="size-5" />
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="text-sm font-semibold text-gray-950 mb-2">BSA Axle (Legal)</h3>
+                <div className="relative aspect-square rounded-lg border border-gray-200 overflow-hidden bg-gray-50">
+                  <Image
+                    src="/axles/bsa_axle.png"
+                    alt="BSA axle"
+                    fill
+                    className="object-contain"
+                    onError={(e) => {
+                      // Fallback if image doesn't exist yet
+                      const target = e.target as HTMLImageElement
+                      target.style.display = 'none'
+                      const parent = target.parentElement
+                      if (parent) {
+                        parent.innerHTML = '<div class="flex items-center justify-center h-full text-gray-400 text-sm">BSA Axle Image</div>'
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <h3 className="text-sm font-semibold text-gray-950 mb-2">Machined Axle (Not Legal)</h3>
+                <div className="relative aspect-square rounded-lg border border-gray-200 overflow-hidden bg-gray-50">
+                  <Image
+                    src="/axles/machined_axle.png"
+                    alt="Machined axle"
+                    fill
+                    className="object-contain"
+                    onError={(e) => {
+                      // Fallback if image doesn't exist yet
+                      const target = e.target as HTMLImageElement
+                      target.style.display = 'none'
+                      const parent = target.parentElement
+                      if (parent) {
+                        parent.innerHTML = '<div class="flex items-center justify-center h-full text-gray-400 text-sm">Machined Axle Image</div>'
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <div className="mt-6 rounded-lg bg-amber-50 border border-amber-200 p-4">
+              <p className="text-sm text-amber-800">
+                <strong>Note:</strong> Machined axles are not legal for competition. Only BSA axles are permitted.
+              </p>
+            </div>
+          </DialogPanel>
+        </div>
+      </Dialog>
     </Container>
   )
 }
