@@ -11,7 +11,6 @@ const links = [
   { href: '/setup', label: 'Race Setup' },
   { href: '/heats', label: 'Heat Control' },
   { href: '/judges', label: 'Judges' },
-  { href: '/judging', label: 'Judging: Beauty' },
   { href: '/standings', label: 'Standings' },
   { href: '/results', label: 'Results' },
   { href: '/public', label: 'Public Display' },

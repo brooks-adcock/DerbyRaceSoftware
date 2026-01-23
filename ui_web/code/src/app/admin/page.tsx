@@ -35,9 +35,9 @@ const admin_links = [
     icon: PlayIcon,
   },
   {
-    name: 'Judging',
-    description: 'Score cars for beauty and design awards.',
-    href: '/judging',
+    name: 'Judges',
+    description: 'Manage judges and generate QR codes for beauty judging.',
+    href: '/judges',
     icon: StarIcon,
   },
   {
