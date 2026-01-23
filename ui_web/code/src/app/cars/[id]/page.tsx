@@ -5,7 +5,7 @@ import { Container } from '@/components/container'
 import { Heading, Subheading } from '@/components/text'
 import { Button } from '@/components/button'
 import { Breadcrumb } from '@/components/breadcrumb'
-import { Car, RegistrationStatus, Run, RaceSettings } from '@/lib/storage'
+import { Car, RegistrationStatus, Run, RaceSettings, Judge } from '@/lib/storage'
 import { validateCarLanes, formatLaneIssues } from '@/lib/validation'
 import { DivisionSelect } from '@/components/division-select'
 import { useParams, useRouter } from 'next/navigation'
@@ -16,6 +16,7 @@ export default function CarAdminPage() {
   const router = useRouter()
   const [car, set_car] = useState<Car | null>(null)
   const [settings, set_settings] = useState<RaceSettings | null>(null)
+  const [judges, set_judges] = useState<Judge[]>([])
   const [is_loading, set_is_loading] = useState(true)
   const [weight_input, set_weight_input] = useState('')
   const [weight_unit, set_weight_unit] = useState<'oz' | 'g'>('oz')
@@ -23,14 +24,21 @@ export default function CarAdminPage() {
   useEffect(() => {
     Promise.all([
       fetch(`/api/cars/${id}`).then(res => res.json()),
-      fetch('/api/settings').then(res => res.json())
-    ]).then(([car_data, settings_data]) => {
+      fetch('/api/settings').then(res => res.json()),
+      fetch('/api/judges').then(res => res.json())
+    ]).then(([car_data, settings_data, judges_data]) => {
       set_car(car_data)
       set_settings(settings_data)
+      set_judges(judges_data)
       set_weight_input(car_data.weight_oz.toString())
       set_is_loading(false)
     })
   }, [id])
+
+  const getJudgeName = (judge_id: string) => {
+    const judge = judges.find(j => j.id === judge_id)
+    return judge?.name || 'Unknown'
+  }
 
   if (is_loading) return <Container className="py-24">Loading...</Container>
   if (!car) return <Container className="py-24">Car not found</Container>
@@ -341,7 +349,6 @@ export default function CarAdminPage() {
                   <table className="w-full text-left text-sm">
                     <thead>
                       <tr className="border-b border-gray-100">
-                        <th className="pb-3 font-semibold text-gray-500">Timestamp</th>
                         <th className="pb-3 font-semibold text-gray-500">Judge</th>
                         <th className="pb-3 font-semibold text-gray-500">Score</th>
                         <th className="pb-3 font-semibold text-gray-500">Included</th>
@@ -351,8 +358,7 @@ export default function CarAdminPage() {
                       {car.beauty_scores.length > 0 ? (
                         car.beauty_scores.map((s, i) => (
                           <tr key={i}>
-                            <td className="py-3 text-gray-950 text-sm">{s.timestamp ? new Date(s.timestamp).toLocaleString() : '--'}</td>
-                            <td className="py-3 text-gray-950">{s.judge_id || '--'}</td>
+                            <td className="py-3 text-gray-950">{s.judge_id ? getJudgeName(s.judge_id) : '--'}</td>
                             <td className="py-3 font-mono text-gray-950">{s.score}</td>
                             <td className="py-3">
                               <label className="flex items-center gap-2 text-sm text-gray-600">
@@ -369,7 +375,7 @@ export default function CarAdminPage() {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={4} className="py-8 text-center text-gray-500">
+                          <td colSpan={3} className="py-8 text-center text-gray-500">
                             No beauty scores recorded yet.
                           </td>
                         </tr>

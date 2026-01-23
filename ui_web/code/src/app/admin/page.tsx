@@ -11,7 +11,8 @@ import {
   PlayIcon, 
   StarIcon, 
   TrophyIcon, 
-  TvIcon 
+  TvIcon,
+  ChartBarIcon 
 } from '@heroicons/react/24/outline'
 
 const admin_links = [
@@ -38,6 +39,12 @@ const admin_links = [
     description: 'Score cars for beauty and design awards.',
     href: '/judging',
     icon: StarIcon,
+  },
+  {
+    name: 'Standings',
+    description: 'View speed and beauty leaderboards.',
+    href: '/standings',
+    icon: ChartBarIcon,
   },
   {
     name: 'Results',

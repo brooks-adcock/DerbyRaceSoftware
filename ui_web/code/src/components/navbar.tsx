@@ -12,6 +12,7 @@ const links = [
   { href: '/heats', label: 'Heat Control' },
   { href: '/judges', label: 'Judges' },
   { href: '/judging', label: 'Judging: Beauty' },
+  { href: '/standings', label: 'Standings' },
   { href: '/results', label: 'Results' },
   { href: '/public', label: 'Public Display' },
   { href: '', label: '', is_divider: true },
@@ -26,10 +27,10 @@ export function Navbar() {
     <>
       <button
         onClick={() => set_is_drawer_open(true)}
-        className="fixed left-4 top-4 z-40 rounded-full bg-white p-2 text-gray-600 shadow-md ring-1 ring-gray-200 hover:bg-gray-50 hover:text-gray-900 focus:outline-none"
+        className="fixed left-4 top-4 z-40 rounded-full bg-white p-2.5 text-gray-600 shadow-lg ring-1 ring-gray-200 transition-all hover:bg-gray-50 hover:text-gray-900 hover:shadow-xl hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-950"
         aria-label="Open menu"
       >
-        <ChevronRightIcon className="size-6" />
+        <ChevronRightIcon className="size-5" />
       </button>
 
       <MenuDrawer

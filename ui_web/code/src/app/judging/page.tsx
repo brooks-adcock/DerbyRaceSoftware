@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Container } from '@/components/container'
+import { Heading, Subheading } from '@/components/text'
 import { Car, BeautyScore, Judge, RaceSettings } from '@/lib/storage'
-import { XMarkIcon } from '@heroicons/react/20/solid'
+import { XMarkIcon, StarIcon } from '@heroicons/react/20/solid'
 import Image from 'next/image'
 
 interface PhotoModalProps {
@@ -15,20 +16,20 @@ interface PhotoModalProps {
 
 function PhotoModal({ photo_hash, car_name, onClose }: PhotoModalProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm" onClick={onClose}>
       <button 
         onClick={onClose} 
-        className="absolute top-4 right-4 rounded-full bg-white/10 p-2 hover:bg-white/20"
+        className="absolute top-6 right-6 rounded-full bg-white/10 p-3 ring-1 ring-white/20 transition-all hover:bg-white/20 hover:scale-110"
       >
-        <XMarkIcon className="size-8 text-white" />
+        <XMarkIcon className="size-6 text-white" />
       </button>
-      <div className="relative max-h-[80vh] max-w-[90vw]" onClick={(e) => e.stopPropagation()}>
+      <div className="relative max-h-[85vh] max-w-[90vw]" onClick={(e) => e.stopPropagation()}>
         <Image
           src={`/photos/${photo_hash}.jpg`}
           alt={car_name}
           width={800}
           height={600}
-          className="max-h-[80vh] w-auto rounded-lg object-contain"
+          className="max-h-[85vh] w-auto rounded-2xl object-contain shadow-2xl ring-2 ring-white/20"
         />
       </div>
     </div>
@@ -46,6 +47,7 @@ export default function JudgingPage() {
   const [selected_judge_id, set_selected_judge_id] = useState<string>('')
   const [division_filter, set_division_filter] = useState<string>('')
   const [expanded_photo, set_expanded_photo] = useState<{ hash: string; name: string } | null>(null)
+  const [pending_scores, set_pending_scores] = useState<Record<number, number>>({})
 
   // Set judge from URL param only
   useEffect(() => {
@@ -96,13 +98,21 @@ export default function JudgingPage() {
     const car = cars.find(c => c.id === car_id)
     if (!car) return
 
+    // Optimistic update - show pending state immediately
+    set_pending_scores(prev => ({ ...prev, [car_id]: score }))
+
     const new_score: BeautyScore = {
       score,
       judge_id: selected_judge_id,
       timestamp: new Date().toISOString(),
       is_included: true,
     }
-    const new_scores = [...car.beauty_scores, new_score]
+    
+    // Replace existing score from this judge, or add new one
+    const existing_index = car.beauty_scores.findIndex(s => s.judge_id === selected_judge_id)
+    const new_scores = existing_index >= 0
+      ? car.beauty_scores.map((s, i) => i === existing_index ? new_score : s)
+      : [...car.beauty_scores, new_score]
     
     try {
       const response = await fetch(`/api/cars/${car_id}`, {
@@ -115,6 +125,13 @@ export default function JudgingPage() {
     } catch (error) {
       console.error(error)
       alert('Failed to save score')
+    } finally {
+      // Clear pending state
+      set_pending_scores(prev => {
+        const next = { ...prev }
+        delete next[car_id]
+        return next
+      })
     }
   }
 
@@ -132,16 +149,27 @@ export default function JudgingPage() {
   }
 
   return (
-    <Container className="py-12">
+    <Container className="py-24">
+      {/* Header */}
+      <div className="mb-12">
+        <Subheading>Design Competition</Subheading>
+        <Heading className="mt-2">Beauty Judging</Heading>
+      </div>
+
       {/* Judge info and Division selector */}
       {selected_judge && (
-        <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center">
+        <div className="mb-12 flex flex-col gap-6 sm:flex-row sm:items-end">
           <div className="flex-1">
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
               Judging as
             </label>
-            <div className="rounded-lg bg-gray-100 py-3 px-4 text-sm font-bold text-gray-950">
-              {selected_judge.name}
+            <div className="flex items-center gap-3 rounded-2xl bg-gray-50 py-4 px-6 ring-1 ring-gray-200">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-950 text-white shadow-inner">
+                <StarIcon className="h-5 w-5" />
+              </div>
+              <div className="text-base font-bold text-gray-950">
+                {selected_judge.name}
+              </div>
             </div>
           </div>
 
@@ -152,7 +180,7 @@ export default function JudgingPage() {
             <select
               value={division_filter}
               onChange={(e) => set_division_filter(e.target.value)}
-              className="block w-full rounded-lg border border-gray-200 py-3 px-4 text-sm font-medium focus:border-gray-950 focus:outline-none"
+              className="block w-full rounded-2xl border border-gray-200 bg-white py-4 px-6 text-sm font-medium shadow-sm ring-1 ring-gray-200 transition-all focus:border-gray-950 focus:outline-none focus:ring-2 focus:ring-gray-950"
             >
               <option value="">All Divisions</option>
               {available_divisions.map((div) => (
@@ -164,41 +192,42 @@ export default function JudgingPage() {
       )}
 
       {/* Cars list */}
-      <div className="mt-8">
+      <div>
         {!selected_judge_id ? (
-          <div className="rounded-xl border border-dashed border-gray-300 p-12 text-center">
-            <p className="text-gray-500 mb-2">No judge selected.</p>
-            <p className="text-sm text-gray-400">Please scan your personal QR code from the Judges page to access your scoring screen.</p>
+          <div className="rounded-3xl border border-dashed border-gray-300 bg-gray-50/50 p-16 text-center ring-1 ring-gray-200">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100">
+              <StarIcon className="h-8 w-8 text-gray-400" />
+            </div>
+            <p className="text-lg font-semibold text-gray-700 mb-2">No judge selected</p>
+            <p className="text-sm text-gray-500">Please scan your personal QR code from the Judges page to access your scoring screen.</p>
           </div>
         ) : filtered_cars.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-gray-300 p-12 text-center">
-            <p className="text-gray-500">No cars to judge in this division.</p>
+          <div className="rounded-3xl border border-dashed border-gray-300 bg-gray-50/50 p-16 text-center ring-1 ring-gray-200">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100">
+              <StarIcon className="h-8 w-8 text-gray-400" />
+            </div>
+            <p className="text-lg font-semibold text-gray-700">No cars to judge in this division</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {filtered_cars.map((car) => {
               const existing_score = getJudgeScoreForCar(car)
               return (
                 <div 
                   key={car.id} 
-                  className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+                  className="group rounded-3xl border border-gray-200 bg-white p-6 shadow-sm ring-1 ring-gray-200 transition-all hover:shadow-md hover:ring-gray-300"
                 >
                   {/* Car name at top */}
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-xs font-bold text-gray-400">#{car.id}</span>
-                    <h3 className="font-bold text-gray-950">{car.car_name}</h3>
-                    {existing_score && (
-                      <span className="ml-auto text-xs text-green-600 font-medium">
-                        Scored: {existing_score.score}
-                      </span>
-                    )}
+                  <div className="mb-6 flex items-center gap-3">
+                    <span className="rounded-lg bg-gray-100 px-3 py-1 text-xs font-bold text-gray-500">#{car.id}</span>
+                    <h3 className="text-lg font-bold text-gray-950">{car.car_name}</h3>
                   </div>
 
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-6">
                     {/* Photo thumbnail */}
                     <button
                       onClick={() => car.photo_hash && set_expanded_photo({ hash: car.photo_hash, name: car.car_name })}
-                      className="relative size-16 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100"
+                      className="relative size-24 flex-shrink-0 overflow-hidden rounded-2xl bg-gray-100 ring-2 ring-gray-200 transition-all hover:ring-gray-300 hover:scale-105"
                     >
                       {car.photo_hash ? (
                         <Image
@@ -208,27 +237,33 @@ export default function JudgingPage() {
                           className="object-cover"
                         />
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center text-xs text-gray-400">
-                          No img
+                        <div className="flex h-full w-full items-center justify-center text-xs font-medium text-gray-400">
+                          No image
                         </div>
                       )}
                     </button>
 
                     {/* Score buttons */}
-                    <div className="flex gap-1 flex-wrap justify-end flex-1">
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((score) => (
-                        <button
-                          key={score}
-                          onClick={() => handleScore(car.id, score)}
-                          className={`size-11 rounded-lg text-sm font-bold transition-colors ${
-                            existing_score?.score === score
-                              ? 'bg-green-600 text-white'
-                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200 active:bg-gray-300'
-                          }`}
-                        >
-                          {score}
-                        </button>
-                      ))}
+                    <div className="flex flex-1 flex-wrap gap-2 justify-end">
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((score) => {
+                        const is_confirmed = existing_score?.score === score
+                        const is_pending = pending_scores[car.id] === score
+                        return (
+                          <button
+                            key={score}
+                            onClick={() => handleScore(car.id, score)}
+                            className={`size-12 rounded-xl text-sm font-bold transition-all shadow-sm ${
+                              is_confirmed
+                                ? 'bg-green-600 text-white ring-2 ring-green-700 shadow-md scale-105'
+                                : is_pending
+                                  ? 'bg-green-400 text-white ring-2 ring-green-500 animate-pulse'
+                                  : 'bg-gray-100 text-gray-700 ring-1 ring-gray-200 hover:bg-gray-200 hover:ring-gray-300 active:scale-95'
+                            }`}
+                          >
+                            {score}
+                          </button>
+                        )
+                      })}
                     </div>
                   </div>
                 </div>
