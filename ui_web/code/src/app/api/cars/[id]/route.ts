@@ -85,6 +85,18 @@ export async function PATCH(
       }
     }
 
+    // Calculate average beauty score if beauty_scores changed
+    if (updates.beauty_scores) {
+      const included_scores = updated_car.beauty_scores
+        .filter((s: any) => s.is_included)
+        .map((s: any) => s.score);
+      if (included_scores.length > 0) {
+        updated_car.average_beauty_score = included_scores.reduce((a: number, b: number) => a + b, 0) / included_scores.length;
+      } else {
+        updated_car.average_beauty_score = undefined;
+      }
+    }
+
     cars[car_index] = updated_car;
     await Storage.saveCars(cars);
 

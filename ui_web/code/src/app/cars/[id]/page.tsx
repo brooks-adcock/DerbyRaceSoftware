@@ -75,6 +75,13 @@ export default function CarAdminPage() {
     handleUpdate({ runs: new_runs })
   }
 
+  const toggleBeautyScoreIncluded = (index: number) => {
+    if (!car) return
+    const new_scores = [...car.beauty_scores]
+    new_scores[index].is_included = !new_scores[index].is_included
+    handleUpdate({ beauty_scores: new_scores })
+  }
+
   return (
     <Container className="py-24">
       <Breadcrumb href="/registration" label="Registration List" />
@@ -325,23 +332,71 @@ export default function CarAdminPage() {
           {/* Beauty Section */}
           <section>
             <Subheading>Beauty Judging</Subheading>
-            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <div className="rounded-xl bg-gray-50 p-6">
-                <div className="text-xs font-medium text-gray-500 uppercase">Scores</div>
-                <div className="mt-1 text-lg font-bold text-gray-950">
-                  {car.beauty_scores.length > 0 ? car.beauty_scores.join(', ') : 'None'}
+            <div className="mt-6 space-y-6">
+              <div className="rounded-xl border border-gray-200 p-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-gray-950">Beauty Scores</h3>
+                </div>
+                <div className="mt-4 overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-100">
+                        <th className="pb-3 font-semibold text-gray-500">Timestamp</th>
+                        <th className="pb-3 font-semibold text-gray-500">Judge</th>
+                        <th className="pb-3 font-semibold text-gray-500">Score</th>
+                        <th className="pb-3 font-semibold text-gray-500">Included</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {car.beauty_scores.length > 0 ? (
+                        car.beauty_scores.map((s, i) => (
+                          <tr key={i}>
+                            <td className="py-3 text-gray-950 text-sm">{s.timestamp ? new Date(s.timestamp).toLocaleString() : '--'}</td>
+                            <td className="py-3 text-gray-950">{s.judge_id || '--'}</td>
+                            <td className="py-3 font-mono text-gray-950">{s.score}</td>
+                            <td className="py-3">
+                              <label className="flex items-center gap-2 text-sm text-gray-600">
+                                <input
+                                  type="checkbox"
+                                  checked={s.is_included ?? false}
+                                  onChange={() => toggleBeautyScoreIncluded(i)}
+                                  className="size-4 rounded border-gray-300 text-gray-950 focus:ring-gray-950"
+                                />
+                                {s.is_included ? 'Included' : 'Excluded'}
+                              </label>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={4} className="py-8 text-center text-gray-500">
+                            No beauty scores recorded yet.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </div>
-              <div className="rounded-xl bg-gray-50 p-6">
-                <div className="text-xs font-medium text-gray-500 uppercase">Beauty Place</div>
-                <div className="mt-1 text-2xl font-bold text-gray-950">
-                  {car.beauty_place_overall || '--'}
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div className="rounded-xl bg-gray-50 p-6">
+                  <div className="text-xs font-medium text-gray-500 uppercase">Average Score</div>
+                  <div className="mt-1 text-2xl font-bold text-gray-950">
+                    {car.average_beauty_score ? car.average_beauty_score.toFixed(1) : '--'}
+                  </div>
                 </div>
-              </div>
-              <div className="rounded-xl bg-gray-50 p-6">
-                <div className="text-xs font-medium text-gray-500 uppercase">Beauty Class Place</div>
-                <div className="mt-1 text-2xl font-bold text-gray-950">
-                  {car.beauty_place_class || '--'}
+                <div className="rounded-xl bg-gray-50 p-6">
+                  <div className="text-xs font-medium text-gray-500 uppercase">Beauty Place</div>
+                  <div className="mt-1 text-2xl font-bold text-gray-950">
+                    {car.beauty_place_overall || '--'}
+                  </div>
+                </div>
+                <div className="rounded-xl bg-gray-50 p-6">
+                  <div className="text-xs font-medium text-gray-500 uppercase">Beauty Class Place</div>
+                  <div className="mt-1 text-2xl font-bold text-gray-950">
+                    {car.beauty_place_class || '--'}
+                  </div>
                 </div>
               </div>
             </div>

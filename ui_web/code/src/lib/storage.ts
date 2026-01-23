@@ -5,6 +5,7 @@ const DATA_DIR = path.join(process.cwd(), 'data');
 const CARS_FILE = path.join(DATA_DIR, 'cars.json');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 const RACE_FILE = path.join(DATA_DIR, 'race.json');
+const JUDGES_FILE = path.join(DATA_DIR, 'judges.json');
 
 export type RegistrationStatus = 'STARTED' | 'REVIEW' | 'REGISTERED' | 'DISQUALIFIED' | 'COURTESY';
 export type RaceState = 'REGISTRATION' | 'RACING' | 'COMPLETE';
@@ -14,6 +15,13 @@ export interface Run {
   timestamp: string;
   is_included: boolean;
   lane: number;
+}
+
+export interface BeautyScore {
+  score: number;
+  judge_id: string;
+  timestamp: string;
+  is_included: boolean;
 }
 
 export interface Car {
@@ -36,7 +44,8 @@ export interface Car {
   average_time?: number;
   overall_place?: number;
   class_place?: number;
-  beauty_scores: number[];
+  beauty_scores: BeautyScore[];
+  average_beauty_score?: number;
   beauty_place_overall?: number;
   beauty_place_class?: number;
 }
@@ -71,6 +80,12 @@ export interface Race {
   manual_runs: Heat[];
   countdown_end: number | null;
   current_heat_id: number | null;
+}
+
+export interface Judge {
+  id: string;
+  name: string;
+  allowed_divisions: string[];  // empty = all divisions
 }
 
 async function ensureDataDir() {
@@ -140,5 +155,13 @@ export const Storage = {
 
   async saveRace(race: Race): Promise<void> {
     await writeJson(RACE_FILE, race);
+  },
+
+  async getJudges(): Promise<Judge[]> {
+    return readJson<Judge[]>(JUDGES_FILE, []);
+  },
+
+  async saveJudges(judges: Judge[]): Promise<void> {
+    await writeJson(JUDGES_FILE, judges);
   },
 };

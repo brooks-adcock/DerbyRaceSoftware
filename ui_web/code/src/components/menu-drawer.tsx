@@ -8,7 +8,7 @@ import { Link } from './link'
 interface MenuDrawerProps {
   is_open: boolean
   onClose: () => void
-  links: { href: string; label: string }[]
+  links: { href: string; label: string; is_divider?: boolean }[]
 }
 
 export function MenuDrawer({ is_open, onClose, links }: MenuDrawerProps) {
@@ -62,15 +62,19 @@ export function MenuDrawer({ is_open, onClose, links }: MenuDrawerProps) {
                     </div>
                     <div className="relative mt-6 flex-1 px-4 sm:px-6">
                       <nav className="space-y-1">
-                        {links.map((link) => (
-                          <Link
-                            key={link.href}
-                            href={link.href}
-                            onClick={onClose}
-                            className="block rounded-md px-3 py-2 text-base font-medium text-gray-900 hover:bg-gray-50"
-                          >
-                            {link.label}
-                          </Link>
+                        {links.map((link, index) => (
+                          link.is_divider ? (
+                            <hr key={`divider-${index}`} className="my-3 border-gray-200" />
+                          ) : (
+                            <Link
+                              key={link.href}
+                              href={link.href}
+                              onClick={onClose}
+                              className="block rounded-md px-3 py-2 text-base font-medium text-gray-900 hover:bg-gray-50"
+                            >
+                              {link.label}
+                            </Link>
+                          )
                         ))}
                       </nav>
                     </div>

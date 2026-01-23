@@ -6,15 +6,17 @@ import { MenuDrawer } from './menu-drawer'
 import { PiStatusBadge } from './pi-status-badge'
 
 const links = [
-  { href: '/', label: 'My Registrations' },
-  { href: '/register', label: 'Register New Car' },
   { href: '/admin', label: 'Admin Dashboard' },
   { href: '/registration', label: 'Registration List' },
   { href: '/setup', label: 'Race Setup' },
   { href: '/heats', label: 'Heat Control' },
+  { href: '/judges', label: 'Judges' },
   { href: '/judging', label: 'Judging: Beauty' },
   { href: '/results', label: 'Results' },
   { href: '/public', label: 'Public Display' },
+  { href: '', label: '', is_divider: true },
+  { href: '/', label: 'My Registrations' },
+  { href: '/register', label: 'Register New Car' },
 ]
 
 export function Navbar() {
