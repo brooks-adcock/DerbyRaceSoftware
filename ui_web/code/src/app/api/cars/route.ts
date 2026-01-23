@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
       weight_oz: 0,
       is_wheels_roll: false,
       is_length_pass: false,
-      track_times: [],
+      runs: [],
       beauty_scores: [],
     };
 

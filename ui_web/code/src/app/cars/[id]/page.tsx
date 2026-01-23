@@ -69,9 +69,9 @@ export default function CarAdminPage() {
 
   const toggleTimeIncluded = (index: number) => {
     if (!car) return
-    const new_times = [...car.track_times]
-    new_times[index].is_included = !new_times[index].is_included
-    handleUpdate({ track_times: new_times })
+    const new_runs = [...car.runs]
+    new_runs[index].is_included = !new_runs[index].is_included
+    handleUpdate({ runs: new_runs })
   }
 
   return (
@@ -248,18 +248,18 @@ export default function CarAdminPage() {
                   <table className="w-full text-left text-sm">
                     <thead>
                       <tr className="border-b border-gray-100">
-                        <th className="pb-3 font-semibold text-gray-500">Heat ID</th>
-                        <th className="pb-3 font-semibold text-gray-500">Track #</th>
+                        <th className="pb-3 font-semibold text-gray-500">Timestamp</th>
+                        <th className="pb-3 font-semibold text-gray-500">Lane</th>
                         <th className="pb-3 font-semibold text-gray-500">Time</th>
                         <th className="pb-3 font-semibold text-gray-500">Included</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
-                      {car.track_times.length > 0 ? (
-                        car.track_times.map((t, i) => (
+                      {car.runs.length > 0 ? (
+                        car.runs.map((t, i) => (
                           <tr key={i}>
-                            <td className="py-3 text-gray-950">{t.heat_id || '--'}</td>
-                            <td className="py-3 text-gray-950">{t.track_number || '--'}</td>
+                            <td className="py-3 text-gray-950 text-sm">{t.timestamp ? new Date(t.timestamp).toLocaleString() : '--'}</td>
+                            <td className="py-3 text-gray-950">{t.lane || '--'}</td>
                             <td className="py-3 font-mono text-gray-950">{t.time.toFixed(4)}s</td>
                             <td className="py-3">
                               <label className="flex items-center gap-2 text-sm text-gray-600">
@@ -277,7 +277,7 @@ export default function CarAdminPage() {
                       ) : (
                         <tr>
                           <td colSpan={4} className="py-8 text-center text-gray-500">
-                            No track times recorded yet.
+                            No runs recorded yet.
                           </td>
                         </tr>
                       )}

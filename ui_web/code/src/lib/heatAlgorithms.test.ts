@@ -23,7 +23,7 @@ function makeCars(n: number): Car[] {
       is_width_pass: true,
       is_ground_clearance_pass: true,
       is_no_loose_parts: true,
-      track_times: [],
+      runs: [],
       beauty_scores: [],
     });
   }

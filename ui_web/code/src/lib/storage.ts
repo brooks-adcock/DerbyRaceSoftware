@@ -9,11 +9,11 @@ const RACE_FILE = path.join(DATA_DIR, 'race.json');
 export type RegistrationStatus = 'STARTED' | 'REVIEW' | 'REGISTERED' | 'DISQUALIFIED' | 'COURTESY';
 export type RaceState = 'REGISTRATION' | 'RACING' | 'COMPLETE';
 
-export interface TrackTime {
-  heat_id?: number;
-  track_number?: number;
+export interface Run {
   time: number;
+  timestamp: string;
   is_included: boolean;
+  lane: number;
 }
 
 export interface Car {
@@ -32,7 +32,7 @@ export interface Car {
   is_width_pass: boolean;
   is_ground_clearance_pass: boolean;
   is_no_loose_parts: boolean;
-  track_times: TrackTime[];
+  runs: Run[];
   average_time?: number;
   overall_place?: number;
   class_place?: number;

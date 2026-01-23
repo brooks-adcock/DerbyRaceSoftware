@@ -73,9 +73,9 @@ export async function PATCH(
 
     const updated_car = { ...cars[car_index], ...updates };
     
-    // Calculate average time if track times changed
-    if (updates.track_times) {
-      const included_times = updated_car.track_times
+    // Calculate average time if runs changed
+    if (updates.runs) {
+      const included_times = updated_car.runs
         .filter((t: any) => t.is_included)
         .map((t: any) => t.time);
       if (included_times.length > 0) {

@@ -140,7 +140,7 @@ export default function Home() {
                   <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Track Times</div>
                   <div className="flex gap-2">
                     {[...Array(settings?.n_tracks || 4)].map((_, i) => {
-                      const time = car.track_times[i]?.time
+                      const time = car.runs[i]?.time
                       return (
                         <div key={i} className="flex-1 rounded bg-gray-50 py-2 text-center">
                           <div className="text-[8px] font-bold text-gray-400 uppercase">T{i+1}</div>

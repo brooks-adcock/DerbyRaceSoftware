@@ -125,11 +125,9 @@ export async function POST(request: NextRequest) {
           const car = cars.find(c => c.id === car_id);
           if (car) {
             const is_included = car.registration_status !== 'COURTESY';
-            // Remove existing time for this heat if any
-            car.track_times = car.track_times.filter(t => t.heat_id !== heat_id);
-            car.track_times.push({ heat_id, track_number: lane_index + 1, time, is_included });
+            car.runs.push({ time, lane: lane_index + 1, timestamp: new Date().toISOString(), is_included });
             
-            const included_times = car.track_times.filter(t => t.is_included).map(t => t.time);
+            const included_times = car.runs.filter(t => t.is_included).map(t => t.time);
             if (included_times.length > 0) {
               car.average_time = included_times.reduce((a, b) => a + b, 0) / included_times.length;
             } else {
@@ -147,25 +145,11 @@ export async function POST(request: NextRequest) {
       const heat = race.heats.find(h => h.id === heat_id);
       
       if (heat) {
-        const cars = await Storage.getCars();
-        
+        // Only clear race.json times - car runs persist (ephemeral race, permanent car record)
         for (const lane of heat.lanes) {
           lane.time = null;
-          
-          // Also remove from car's track_times
-          if (lane.car_id) {
-            const car = cars.find(c => c.id === lane.car_id);
-            if (car) {
-              car.track_times = car.track_times.filter(t => t.heat_id !== heat_id);
-              const included_times = car.track_times.filter(t => t.is_included).map(t => t.time);
-              car.average_time = included_times.length > 0 
-                ? included_times.reduce((a, b) => a + b, 0) / included_times.length 
-                : undefined;
-            }
-          }
         }
         
-        await Storage.saveCars(cars);
         await Storage.saveRace(race);
       }
       return NextResponse.json(race);
@@ -260,11 +244,9 @@ export async function POST(request: NextRequest) {
               const car = cars.find(c => c.id === lane.car_id);
               if (car) {
                 const is_included = car.registration_status !== 'COURTESY';
-                // Remove existing time for this heat if any
-                car.track_times = car.track_times.filter(t => t.heat_id !== heat.id);
-                car.track_times.push({ heat_id: heat.id, track_number: i + 1, time: finish_time, is_included });
+                car.runs.push({ time: finish_time, lane: i + 1, timestamp: new Date().toISOString(), is_included });
                 
-                const included_times = car.track_times.filter(t => t.is_included).map(t => t.time);
+                const included_times = car.runs.filter(t => t.is_included).map(t => t.time);
                 car.average_time = included_times.length > 0 
                   ? included_times.reduce((a, b) => a + b, 0) / included_times.length 
                   : undefined;
