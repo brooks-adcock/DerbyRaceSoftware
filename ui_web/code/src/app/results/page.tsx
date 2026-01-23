@@ -6,8 +6,9 @@ import { Heading, Subheading } from '@/components/text'
 import { Button } from '@/components/button'
 import { Breadcrumb } from '@/components/breadcrumb'
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
-import { TrophyIcon, CheckCircleIcon } from '@heroicons/react/24/solid'
+import { TrophyIcon, CheckCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/solid'
 import type { Car, RaceSettings } from '@/lib/storage'
+import { validateCarLanes, formatLaneIssues } from '@/lib/validation'
 
 export default function ResultsPage() {
   const [cars, set_cars] = useState<Car[]>([])
@@ -145,35 +146,49 @@ export default function ResultsPage() {
                 <th className="pb-4 pr-4 font-bold uppercase tracking-widest text-[10px]">Owner</th>
                 <th className="pb-4 pr-4 font-bold uppercase tracking-widest text-[10px]">Division</th>
                 <th className="pb-4 pr-4 font-bold uppercase tracking-widest text-[10px]">Avg Time</th>
+                <th className="pb-4 pr-4 font-bold uppercase tracking-widest text-[10px]"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {ranked_cars.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-gray-500">
+                  <td colSpan={7} className="py-8 text-center text-gray-500">
                     No race times recorded yet.
                   </td>
                 </tr>
               ) : (
-                ranked_cars.map((car, index) => (
-                  <tr key={car.id} className="group hover:bg-gray-50">
-                    <td className="py-4 pr-4">
-                      <div className={`flex size-8 items-center justify-center rounded-full font-bold text-sm ${
-                        index === 0 ? 'bg-yellow-400 text-yellow-950' :
-                        index === 1 ? 'bg-gray-300 text-gray-800' :
-                        index === 2 ? 'bg-orange-300 text-orange-900' :
-                        'bg-gray-100 text-gray-600'
-                      }`}>
-                        {index + 1}
-                      </div>
-                    </td>
-                    <td className="py-4 pr-4 font-black text-gray-950">#{car.id}</td>
-                    <td className="py-4 pr-4 font-bold text-gray-950">{car.car_name}</td>
-                    <td className="py-4 pr-4 text-gray-600">{car.first_name} {car.last_name}</td>
-                    <td className="py-4 pr-4 text-gray-600">{car.division}</td>
-                    <td className="py-4 pr-4 font-mono font-bold text-gray-950">{car.average_time?.toFixed(4)}s</td>
-                  </tr>
-                ))
+                ranked_cars.map((car, index) => {
+                  const validation = settings ? validateCarLanes(car, settings.n_tracks) : null;
+                  return (
+                    <tr key={car.id} className="group hover:bg-gray-50">
+                      <td className="py-4 pr-4">
+                        <div className={`flex size-8 items-center justify-center rounded-full font-bold text-sm ${
+                          index === 0 ? 'bg-yellow-400 text-yellow-950' :
+                          index === 1 ? 'bg-gray-300 text-gray-800' :
+                          index === 2 ? 'bg-orange-300 text-orange-900' :
+                          'bg-gray-100 text-gray-600'
+                        }`}>
+                          {index + 1}
+                        </div>
+                      </td>
+                      <td className="py-4 pr-4 font-black text-gray-950">#{car.id}</td>
+                      <td className="py-4 pr-4 font-bold text-gray-950">{car.car_name}</td>
+                      <td className="py-4 pr-4 text-gray-600">{car.first_name} {car.last_name}</td>
+                      <td className="py-4 pr-4 text-gray-600">{car.division}</td>
+                      <td className="py-4 pr-4 font-mono font-bold text-gray-950">{car.average_time?.toFixed(4)}s</td>
+                      <td className="py-4 pr-4">
+                        {validation && !validation.is_valid && (
+                          <div className="group/tooltip relative">
+                            <ExclamationTriangleIcon className="size-5 text-amber-500" />
+                            <div className="absolute right-0 top-full z-10 mt-1 hidden w-48 rounded-lg bg-gray-900 px-3 py-2 text-xs text-white shadow-lg group-hover/tooltip:block">
+                              {formatLaneIssues(validation)}
+                            </div>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

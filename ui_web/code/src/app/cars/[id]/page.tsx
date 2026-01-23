@@ -5,7 +5,8 @@ import { Container } from '@/components/container'
 import { Heading, Subheading } from '@/components/text'
 import { Button } from '@/components/button'
 import { Breadcrumb } from '@/components/breadcrumb'
-import { Car, RegistrationStatus, TrackTime, RaceSettings } from '@/lib/storage'
+import { Car, RegistrationStatus, Run, RaceSettings } from '@/lib/storage'
+import { validateCarLanes, formatLaneIssues } from '@/lib/validation'
 import { DivisionSelect } from '@/components/division-select'
 import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
@@ -244,6 +245,18 @@ export default function CarAdminPage() {
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-bold text-gray-950">Track Times</h3>
                 </div>
+                {settings && car.runs.length > 0 && (() => {
+                  const validation = validateCarLanes(car, settings.n_tracks);
+                  if (!validation.is_valid) {
+                    return (
+                      <div className="mt-3 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800 ring-1 ring-amber-200">
+                        <span className="font-semibold">Lane Issues: </span>
+                        {formatLaneIssues(validation)}
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
                 <div className="mt-4 overflow-x-auto">
                   <table className="w-full text-left text-sm">
                     <thead>
