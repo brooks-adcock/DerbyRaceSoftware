@@ -121,7 +121,7 @@ export default function CarAdminPage() {
                   <input
                     type="checkbox"
                     id="wheels_roll"
-                    checked={car.is_wheels_roll}
+                    checked={car.is_wheels_roll ?? false}
                     onChange={(e) => handleUpdate({ is_wheels_roll: e.target.checked })}
                     className="size-4 rounded border-gray-300 text-gray-950 focus:ring-gray-950"
                   />
@@ -133,7 +133,7 @@ export default function CarAdminPage() {
                   <input
                     type="checkbox"
                     id="length_pass"
-                    checked={car.is_length_pass}
+                    checked={car.is_length_pass ?? false}
                     onChange={(e) => handleUpdate({ is_length_pass: e.target.checked })}
                     className="size-4 rounded border-gray-300 text-gray-950 focus:ring-gray-950"
                   />
@@ -145,7 +145,7 @@ export default function CarAdminPage() {
                   <input
                     type="checkbox"
                     id="width_pass"
-                    checked={car.is_width_pass}
+                    checked={car.is_width_pass ?? false}
                     onChange={(e) => handleUpdate({ is_width_pass: e.target.checked })}
                     className="size-4 rounded border-gray-300 text-gray-950 focus:ring-gray-950"
                   />
@@ -157,7 +157,7 @@ export default function CarAdminPage() {
                   <input
                     type="checkbox"
                     id="ground_clearance_pass"
-                    checked={car.is_ground_clearance_pass}
+                    checked={car.is_ground_clearance_pass ?? false}
                     onChange={(e) => handleUpdate({ is_ground_clearance_pass: e.target.checked })}
                     className="size-4 rounded border-gray-300 text-gray-950 focus:ring-gray-950"
                   />
@@ -169,7 +169,7 @@ export default function CarAdminPage() {
                   <input
                     type="checkbox"
                     id="no_loose_parts"
-                    checked={car.is_no_loose_parts}
+                    checked={car.is_no_loose_parts ?? false}
                     onChange={(e) => handleUpdate({ is_no_loose_parts: e.target.checked })}
                     className="size-4 rounded border-gray-300 text-gray-950 focus:ring-gray-950"
                   />
@@ -278,7 +278,7 @@ export default function CarAdminPage() {
                               <label className="flex items-center gap-2 text-sm text-gray-600">
                                 <input
                                   type="checkbox"
-                                  checked={t.is_included}
+                                  checked={t.is_included ?? false}
                                   onChange={() => toggleTimeIncluded(i)}
                                   className="size-4 rounded border-gray-300 text-gray-950 focus:ring-gray-950"
                                 />

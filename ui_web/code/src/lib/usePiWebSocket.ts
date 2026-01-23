@@ -149,7 +149,8 @@ export function usePiWebSocket(options: UsePiWebSocketOptions): UsePiWebSocketRe
 
       ws.onerror = (e) => {
         // WebSocket errors don't expose details for security, check close event
-        console.error('[Pi WS] Error event (check Network tab for details)')
+        // Using warn instead of error since UI badge handles display
+        console.warn('[Pi WS] Connection failed (Pi may be offline)')
         setError('WebSocket error')
         setConnectionState('error')
       }
@@ -172,7 +173,7 @@ export function usePiWebSocket(options: UsePiWebSocketOptions): UsePiWebSocketRe
         }
       }
     } catch (e) {
-      console.error('[Pi WS] Connect exception:', e)
+      console.warn('[Pi WS] Connect exception:', e)
       setError(`Failed to connect: ${e}`)
       setConnectionState('error')
     }

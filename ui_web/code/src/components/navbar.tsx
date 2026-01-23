@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { ChevronRightIcon } from '@heroicons/react/24/solid'
 import { MenuDrawer } from './menu-drawer'
+import { PiStatusBadge } from './pi-status-badge'
 
 const links = [
   { href: '/', label: 'My Registrations' },
@@ -34,6 +35,8 @@ export function Navbar() {
         onClose={() => set_is_drawer_open(false)}
         links={links}
       />
+
+      <PiStatusBadge />
     </>
   )
 }
