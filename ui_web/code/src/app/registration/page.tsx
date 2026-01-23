@@ -114,6 +114,11 @@ export default function RegistrationListPage() {
     }
   }
 
+  const getBeautySpeedLabel = (c: Car): 'B/S' | 'S/B' | 'S' => {
+    if (!(c.is_beauty ?? false)) return 'S'
+    return (c.win_preference ?? 'speed') === 'beauty' ? 'B/S' : 'S/B'
+  }
+
   return (
     <Container className="py-24">
       <Breadcrumb />
@@ -177,6 +182,9 @@ export default function RegistrationListPage() {
               <th className="cursor-pointer pb-4 pr-4 font-bold uppercase tracking-widest text-[10px]" onClick={() => toggleSort('division')}>
                 DIVISION {sort_key === 'division' && (sort_order === 'asc' ? '↑' : '↓')}
               </th>
+              <th className="pb-4 pr-4 font-bold uppercase tracking-widest text-[10px] text-gray-500" title="B/S=beauty+prefer beauty, S/B=beauty+prefer speed, S=not beauty">
+                B/S
+              </th>
               <th className="cursor-pointer pb-4 pr-4 font-bold uppercase tracking-widest text-[10px]" onClick={() => toggleSort('registration_status')}>
                 STATUS {sort_key === 'registration_status' && (sort_order === 'asc' ? '↑' : '↓')}
               </th>
@@ -185,13 +193,13 @@ export default function RegistrationListPage() {
           <tbody className="divide-y divide-gray-100">
             {is_loading ? (
               <tr>
-                <td colSpan={5} className="py-8 text-center text-gray-500">
+                <td colSpan={6} className="py-8 text-center text-gray-500">
                   Loading cars...
                 </td>
               </tr>
             ) : sorted_cars.length === 0 ? (
               <tr>
-                <td colSpan={5} className="py-8 text-center text-gray-500">
+                <td colSpan={6} className="py-8 text-center text-gray-500">
                   No cars found.
                 </td>
               </tr>
@@ -220,6 +228,12 @@ export default function RegistrationListPage() {
                         {is_orphaned && <ExclamationTriangleIcon className="size-4 text-amber-500" />}
                         <span className={`font-medium ${is_orphaned ? 'text-amber-700' : 'text-gray-600'}`}>{car.division}</span>
                       </div>
+                    </td>
+                    <td className="py-4 pr-4 font-mono text-gray-500" title={
+                      getBeautySpeedLabel(car) === 'B/S' ? 'Registered for beauty, prefer beauty' :
+                      getBeautySpeedLabel(car) === 'S/B' ? 'Registered for beauty, prefer speed' : 'Not registered for beauty'
+                    }>
+                      {getBeautySpeedLabel(car)}
                     </td>
                     <td className="py-4 pr-4">
                       <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${

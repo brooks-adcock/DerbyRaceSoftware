@@ -252,6 +252,41 @@ export default function CarAdminPage() {
             </div>
           </section>
 
+          {/* Registrant Choices */}
+          <section>
+            <Subheading>Registrant Choices</Subheading>
+            <div className="mt-6 rounded-xl border border-gray-200 p-6">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="is_beauty"
+                    checked={car.is_beauty ?? false}
+                    onChange={(e) => handleUpdate({ is_beauty: e.target.checked })}
+                    className="size-4 rounded border-gray-300 text-gray-950 focus:ring-gray-950"
+                  />
+                  <label htmlFor="is_beauty" className="text-sm font-medium text-gray-950">
+                    Consider for Beauty Award
+                  </label>
+                </div>
+                <div>
+                  <label htmlFor="win_preference" className="block text-sm font-medium text-gray-950">
+                    If they win twice, which award?
+                  </label>
+                  <select
+                    id="win_preference"
+                    value={car.win_preference ?? 'speed'}
+                    onChange={(e) => handleUpdate({ win_preference: e.target.value as 'beauty' | 'speed' })}
+                    className="mt-2 block w-full rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-950 focus:border-gray-950 focus:outline-none"
+                  >
+                    <option value="speed">Speed</option>
+                    <option value="beauty">Beauty</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </section>
+
           {/* Race Stats Section */}
           <section>
             <Subheading>Race Performance</Subheading>
