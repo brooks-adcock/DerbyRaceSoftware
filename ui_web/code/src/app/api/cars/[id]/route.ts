@@ -59,7 +59,7 @@ export async function PATCH(
     // Check if editability is allowed
     const race = await Storage.getRace();
     const car = cars[car_index];
-    const finalized_statuses: RegistrationStatus[] = ['REGISTERED', 'DISQUALIFIED', 'COURTESY'];
+    const finalized_statuses: RegistrationStatus[] = ['REGISTERED', 'REGISTERED_BEAUTY', 'DISQUALIFIED', 'COURTESY'];
     
     // Only enforce editability rules for public registration updates (FormData)
     if (content_type.includes('multipart/form-data')) {

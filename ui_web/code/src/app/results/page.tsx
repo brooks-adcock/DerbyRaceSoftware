@@ -86,10 +86,14 @@ export default function ResultsPage() {
     })
   }
 
-  // Get all cars sorted by average time, excluding those without times (DNF)
+  // Get all cars sorted by average time, excluding those without times (DNF) and beauty-only registrations
   const getRankedCars = () => {
     return cars
-      .filter(c => c.average_time && c.average_time > 0)
+      .filter(c => {
+        if (!c.average_time || c.average_time <= 0) return false
+        if (c.registration_status === 'REGISTERED_BEAUTY') return false
+        return true
+      })
       .sort((a, b) => (a.average_time || 0) - (b.average_time || 0))
   }
 
@@ -98,6 +102,7 @@ export default function ResultsPage() {
     return cars
       .filter(c => {
         if (!c.average_time || c.average_time <= 0) return false
+        if (c.registration_status === 'REGISTERED_BEAUTY') return false
         if (selected_divisions.length > 0 && !selected_divisions.includes(c.division)) return false
         return true
       })

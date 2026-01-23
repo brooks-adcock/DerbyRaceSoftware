@@ -94,6 +94,7 @@ export default function StandingsPage() {
     return cars
       .filter(c => {
         if (!c.average_time || c.average_time <= 0) return false
+        if (c.registration_status === 'REGISTERED_BEAUTY') return false
         if (selected_divisions.length > 0 && !selected_divisions.includes(c.division)) return false
         return true
       })

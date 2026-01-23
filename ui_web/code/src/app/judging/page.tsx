@@ -80,8 +80,8 @@ export default function JudgingPage() {
   const filtered_cars = cars.filter((car) => {
     // Must be beauty judging eligible
     if (!car.is_beauty) return false
-    // Must be REGISTERED or COURTESY
-    if (car.registration_status !== 'REGISTERED' && car.registration_status !== 'COURTESY') return false
+    // Must be REGISTERED, REGISTERED_BEAUTY, or COURTESY
+    if (car.registration_status !== 'REGISTERED' && car.registration_status !== 'REGISTERED_BEAUTY' && car.registration_status !== 'COURTESY') return false
     // Must be in an allowed division for this judge
     if (!available_divisions.includes(car.division)) return false
     // Division filter

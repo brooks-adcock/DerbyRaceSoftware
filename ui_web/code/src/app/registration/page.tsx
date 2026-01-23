@@ -149,6 +149,7 @@ export default function RegistrationListPage() {
               <option value="STARTED">Reg. Started</option>
               <option value="REVIEW">Under Review</option>
               <option value="REGISTERED">Registered</option>
+              <option value="REGISTERED_BEAUTY">Registered - Beauty</option>
               <option value="DISQUALIFIED">Disqualified</option>
               <option value="COURTESY">Courtesy Run</option>
             </select>
@@ -238,6 +239,7 @@ export default function RegistrationListPage() {
                     <td className="py-4 pr-4">
                       <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${
                         car.registration_status === 'REGISTERED' ? 'bg-green-100 text-green-700' :
+                        car.registration_status === 'REGISTERED_BEAUTY' ? 'bg-teal-100 text-teal-700' :
                         car.registration_status === 'REVIEW' ? 'bg-blue-100 text-blue-700' :
                         car.registration_status === 'DISQUALIFIED' ? 'bg-red-100 text-red-700' :
                         car.registration_status === 'COURTESY' ? 'bg-purple-100 text-purple-700' :
@@ -246,7 +248,8 @@ export default function RegistrationListPage() {
                         {car.registration_status === 'STARTED' ? 'Reg. Started' : 
                          car.registration_status === 'REVIEW' ? 'Under Review' : 
                          car.registration_status === 'DISQUALIFIED' ? 'Disqualified' : 
-                         car.registration_status === 'COURTESY' ? 'Courtesy Run' : 'Registered'}
+                         car.registration_status === 'COURTESY' ? 'Courtesy Run' :
+                         car.registration_status === 'REGISTERED_BEAUTY' ? 'Reg. - Beauty' : 'Registered'}
                       </span>
                     </td>
                   </tr>

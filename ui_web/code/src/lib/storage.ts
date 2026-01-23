@@ -7,7 +7,7 @@ const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 const RACE_FILE = path.join(DATA_DIR, 'race.json');
 const JUDGES_FILE = path.join(DATA_DIR, 'judges.json');
 
-export type RegistrationStatus = 'STARTED' | 'REVIEW' | 'REGISTERED' | 'DISQUALIFIED' | 'COURTESY';
+export type RegistrationStatus = 'STARTED' | 'REVIEW' | 'REGISTERED' | 'REGISTERED_BEAUTY' | 'DISQUALIFIED' | 'COURTESY';
 export type RaceState = 'REGISTRATION' | 'RACING' | 'COMPLETE';
 
 export interface Run {
@@ -40,6 +40,13 @@ export interface Car {
   is_width_pass: boolean;
   is_ground_clearance_pass: boolean;
   is_no_loose_parts: boolean;
+  is_flat_region_front: boolean;
+  is_axles_precut_slots: boolean;
+  is_axles_wheels_bsa: boolean;
+  is_wheel_diameter_pass: boolean;
+  is_dry_powder_lubricant: boolean;
+  is_no_propulsion: boolean;
+  is_no_magnets_glue_front: boolean;
   runs: Run[];
   average_time?: number;
   overall_place?: number;

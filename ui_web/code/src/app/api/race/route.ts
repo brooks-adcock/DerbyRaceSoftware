@@ -48,6 +48,7 @@ export async function POST(request: NextRequest) {
         const cars = await Storage.getCars();
         const invalid_cars = cars.filter(c => 
           c.registration_status !== 'REGISTERED' && 
+          c.registration_status !== 'REGISTERED_BEAUTY' &&
           c.registration_status !== 'COURTESY' && 
           c.registration_status !== 'DISQUALIFIED'
         );
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
           }, { status: 400 });
         }
 
-        const active_cars = cars.filter(c => c.registration_status === 'REGISTERED' || c.registration_status === 'COURTESY');
+        const active_cars = cars.filter(c => c.registration_status === 'REGISTERED' || c.registration_status === 'REGISTERED_BEAUTY' || c.registration_status === 'COURTESY');
         if (active_cars.length === 0) {
           return NextResponse.json({ 
             error: 'No cars ready to race. Please register at least one car.' 
@@ -85,7 +86,7 @@ export async function POST(request: NextRequest) {
       const { divisions } = body;
       const cars = await Storage.getCars();
       const settings = await Storage.getSettings();
-      let active_cars = cars.filter(c => c.registration_status === 'REGISTERED' || c.registration_status === 'COURTESY');
+      let active_cars = cars.filter(c => c.registration_status === 'REGISTERED' || c.registration_status === 'REGISTERED_BEAUTY' || c.registration_status === 'COURTESY');
       
       // Filter by divisions if provided
       if (divisions && divisions.length > 0) {

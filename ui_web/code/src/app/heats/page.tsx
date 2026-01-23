@@ -58,7 +58,7 @@ export default function HeatsPage() {
   const deselectAllDivisions = () => set_selected_divisions([])
 
   const getActiveCarsInDivision = (division: string) => 
-    cars.filter(c => c.division === division && (c.registration_status === 'REGISTERED' || c.registration_status === 'COURTESY')).length
+    cars.filter(c => c.division === division && (c.registration_status === 'REGISTERED' || c.registration_status === 'REGISTERED_BEAUTY' || c.registration_status === 'COURTESY')).length
 
   const handleGenerateHeats = async () => {
     const response = await fetch('/api/race', {

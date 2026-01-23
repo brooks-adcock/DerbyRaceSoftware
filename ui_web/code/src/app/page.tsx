@@ -17,7 +17,7 @@ export default function Home() {
 
   const isEditable = (car: Car) => {
     if (race_state !== 'REGISTRATION') return false
-    const finalized_statuses: RegistrationStatus[] = ['REGISTERED', 'DISQUALIFIED', 'COURTESY']
+    const finalized_statuses: RegistrationStatus[] = ['REGISTERED', 'REGISTERED_BEAUTY', 'DISQUALIFIED', 'COURTESY']
     return !finalized_statuses.includes(car.registration_status)
   }
 
@@ -107,6 +107,7 @@ export default function Home() {
                   <h3 className="text-lg font-bold text-gray-950">{car.car_name}</h3>
                   <span className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${
                     car.registration_status === 'REGISTERED' ? 'bg-green-100 text-green-700' :
+                    car.registration_status === 'REGISTERED_BEAUTY' ? 'bg-teal-100 text-teal-700' :
                     car.registration_status === 'COURTESY' ? 'bg-purple-100 text-purple-700' :
                     car.registration_status === 'REVIEW' ? 'bg-blue-100 text-blue-700' :
                     car.registration_status === 'DISQUALIFIED' ? 'bg-red-100 text-red-700' :
@@ -116,6 +117,7 @@ export default function Home() {
                      car.registration_status === 'REVIEW' ? 'Checking In...' :
                      car.registration_status === 'DISQUALIFIED' ? 'Disqualified' :
                      car.registration_status === 'COURTESY' ? 'Courtesy Entrant' :
+                     car.registration_status === 'REGISTERED_BEAUTY' ? "You're In! (Beauty)" :
                      "You're In!"}
                   </span>
                 </div>
