@@ -23,8 +23,42 @@ export default function ManualHeatPage() {
 
   const handleGo = async () => {
     set_is_running(true)
-    // For manual heats, we'll talk to /api/race later if we want to save them
-    console.log('Running manual heat with cars:', lane_cars)
+    
+    try {
+      const response = await fetch('/api/race', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'run_manual_heat',
+          lane_cars,
+        }),
+      })
+      
+      if (!response.ok) {
+        const error = await response.json()
+        console.error('Failed to run manual heat:', error)
+        alert(`Error: ${error.error || 'Failed to run heat'}`)
+        set_is_running(false)
+        return
+      }
+      
+      const data = await response.json()
+      
+      // Update lane times in UI
+      const new_times = [...lane_times]
+      for (let i = 0; i < data.lane_times.length; i++) {
+        if (data.lane_times[i] !== null) {
+          new_times[i] = data.lane_times[i].toFixed(3)
+        }
+      }
+      set_lane_times(new_times)
+      
+    } catch (error) {
+      console.error('Error running manual heat:', error)
+      alert('Failed to run manual heat. Please try again.')
+    } finally {
+      set_is_running(false)
+    }
   }
 
   if (!settings) return <Container className="py-24">Loading...</Container>
@@ -57,7 +91,7 @@ export default function ManualHeatPage() {
             <div className="mt-8">
               <label className="block text-xs font-medium text-gray-400 uppercase">Time</label>
               <div className="mt-2 block w-full rounded-lg border border-gray-100 bg-gray-50 px-4 py-2 font-mono text-xl text-gray-400">
-                {lane_times[i] || '--.---'}
+                {lane_times[i] ? lane_times[i] : '--.---'}
               </div>
             </div>
           </div>

@@ -19,11 +19,11 @@ Environment="SERVO_CHANNEL=0"
 Environment="SERVO_UP_ANGLE=90"
 Environment="SERVO_DOWN_ANGLE=0"
 
-# Finish line sensors (GPIO pins)
-Environment="SENSOR_PIN_1=17"
-Environment="SENSOR_PIN_2=27"
-Environment="SENSOR_PIN_3=22"
-Environment="SENSOR_PIN_4=23"
+# Finish line sensors (GPIO pins, reversed from physical order)
+Environment="SENSOR_PIN_1=23"
+Environment="SENSOR_PIN_2=22"
+Environment="SENSOR_PIN_3=27"
+Environment="SENSOR_PIN_4=17"
 
 # Run the application
 ExecStart=/home/pi/track-api/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000

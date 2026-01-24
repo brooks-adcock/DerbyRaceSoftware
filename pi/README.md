@@ -176,10 +176,10 @@ GPIO pins are configurable via environment variables in the systemd service:
 |----------|---------|-------------|
 | `NUM_TRACKS` | 4 | Number of lanes |
 | `SERVO_PIN` | 18 | GPIO pin for gate servo |
-| `SENSOR_PIN_1` | 17 | GPIO pin for lane 1 sensor |
-| `SENSOR_PIN_2` | 27 | GPIO pin for lane 2 sensor |
-| `SENSOR_PIN_3` | 22 | GPIO pin for lane 3 sensor |
-| `SENSOR_PIN_4` | 23 | GPIO pin for lane 4 sensor |
+| `SENSOR_PIN_1` | 23 | GPIO pin for lane 1 sensor |
+| `SENSOR_PIN_2` | 22 | GPIO pin for lane 2 sensor |
+| `SENSOR_PIN_3` | 27 | GPIO pin for lane 3 sensor |
+| `SENSOR_PIN_4` | 17 | GPIO pin for lane 4 sensor |
 
 Edit `/etc/systemd/system/track-api.service` to change these.
 

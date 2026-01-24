@@ -304,8 +304,8 @@ class RealHardware(HardwareInterface):
             GPIO.setwarnings(False)
             
             # Sensor pins (one per lane, configurable via env)
-            # Default: GPIO 17, 27, 22, 23 for lanes 1-4
-            default_sensor_pins = [17, 27, 22, 23]
+            # Default: GPIO 23, 22, 27, 17 for lanes 1-4 (reversed from physical order)
+            default_sensor_pins = [23, 22, 27, 17]
             self.sensor_pins = []
             
             for i in range(self.num_tracks):

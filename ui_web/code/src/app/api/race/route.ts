@@ -262,6 +262,122 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(race);
     }
 
+    if (body.action === 'run_manual_heat') {
+      const { lane_cars } = body; // Array of car numbers (strings) or empty strings
+      const settings = await Storage.getSettings();
+      const cars = await Storage.getCars();
+      
+      // Build lanes array and occupied_lanes for Pi
+      const lanes: Lane[] = [];
+      const occupied_lanes: number[] = [];
+      
+      for (let i = 0; i < settings.n_tracks; i++) {
+        const car_number_str = lane_cars[i]?.trim() || '';
+        const car_number = car_number_str ? parseInt(car_number_str, 10) : null;
+        const car = car_number ? cars.find(c => c.id === car_number) : null;
+        
+        lanes.push({
+          car_id: car ? car.id : null,
+          time: null,
+        });
+        
+        if (car) {
+          occupied_lanes.push(i + 1); // Pi uses 1-indexed lanes
+        }
+      }
+      
+      // Generate negative heat_id for manual heat
+      const min_manual_id = race.manual_runs.length > 0
+        ? Math.min(...race.manual_runs.map(h => h.id))
+        : 0;
+      const heat_id = min_manual_id - 1;
+      
+      // Create manual heat
+      const manual_heat: Heat = {
+        id: heat_id,
+        lanes,
+      };
+      
+      // Raise gate first
+      if (settings.pi_url) {
+        try {
+          await fetch(`http://${settings.pi_url}/gate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ is_down: false }),
+          });
+          console.log('Gate raised via Pi');
+        } catch (error) {
+          console.error('Failed to raise gate on Pi:', error);
+        }
+      }
+      
+      // Run race on Pi hardware
+      let pi_results: { lane_results: Array<{ lane_number: number; finish_time_ms: number | null; is_dnf: boolean }> } | null = null;
+      
+      if (settings.pi_url && occupied_lanes.length > 0) {
+        try {
+          const pi_response = await fetch(`http://${settings.pi_url}/race/run`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              heat_id: `heat-${heat_id}`,
+              occupied_lanes,
+            }),
+          });
+          
+          if (pi_response.ok) {
+            pi_results = await pi_response.json();
+            console.log('Pi race results:', pi_results);
+          } else if (pi_response.status === 409) {
+            console.log('Pi heat cancelled (false start)');
+          } else {
+            console.error('Pi race failed:', await pi_response.text());
+          }
+        } catch (error) {
+          console.error('Failed to connect to Pi:', error);
+        }
+      }
+      
+      // Apply results from Pi
+      const lane_times: (number | null)[] = [];
+      for (let i = 0; i < lanes.length; i++) {
+        const lane = lanes[i];
+        let finish_time: number | null = null;
+        
+        if (pi_results && lane.car_id) {
+          const lane_result = pi_results.lane_results.find(r => r.lane_number === i + 1);
+          if (lane_result && lane_result.finish_time_ms !== null && !lane_result.is_dnf) {
+            finish_time = Math.round(lane_result.finish_time_ms) / 1000;
+          }
+        }
+        
+        lane.time = finish_time;
+        lane_times.push(finish_time);
+        
+        // Update car runs if we have a result
+        if (finish_time !== null && lane.car_id) {
+          const car = cars.find(c => c.id === lane.car_id);
+          if (car) {
+            const is_included = car.registration_status !== 'COURTESY';
+            car.runs.push({ time: finish_time, lane: i + 1, timestamp: new Date().toISOString(), is_included });
+            
+            const included_times = car.runs.filter(t => t.is_included).map(t => t.time);
+            car.average_time = included_times.length > 0 
+              ? included_times.reduce((a, b) => a + b, 0) / included_times.length 
+              : undefined;
+          }
+        }
+      }
+      
+      // Save manual heat to race
+      race.manual_runs.push(manual_heat);
+      await Storage.saveCars(cars);
+      await Storage.saveRace(race);
+      
+      return NextResponse.json({ lane_times, heat: manual_heat });
+    }
+
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
   } catch (error) {
     console.error('Error in POST /api/race:', error);

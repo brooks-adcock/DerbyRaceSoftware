@@ -216,10 +216,10 @@ Environment="NUM_TRACKS=4"
 Environment="SERVO_CHANNEL=0"
 Environment="SERVO_UP_ANGLE=90"
 Environment="SERVO_DOWN_ANGLE=0"
-Environment="SENSOR_PIN_1=17"
-Environment="SENSOR_PIN_2=27"
-Environment="SENSOR_PIN_3=22"
-Environment="SENSOR_PIN_4=23"
+Environment="SENSOR_PIN_1=23"
+Environment="SENSOR_PIN_2=22"
+Environment="SENSOR_PIN_3=27"
+Environment="SENSOR_PIN_4=17"
 ```
 
 ---
